@@ -74,16 +74,36 @@ function Navbar() {
   const useLightNavbar = isScrolled || !isHomePage
 
   useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 10)
-    handleScroll()
-    window.addEventListener('scroll', handleScroll)
+    const desktopMediaQuery = window.matchMedia('(min-width: 768px)')
 
-    return () => window.removeEventListener('scroll', handleScroll)
+    const handleDesktopScroll = () => {
+      if (!desktopMediaQuery.matches) {
+        setIsScrolled(false)
+        return
+      }
+      setIsScrolled(window.scrollY > 10)
+    }
+
+    handleDesktopScroll()
+    window.addEventListener('scroll', handleDesktopScroll)
+    desktopMediaQuery.addEventListener('change', handleDesktopScroll)
+
+    return () => {
+      window.removeEventListener('scroll', handleDesktopScroll)
+      desktopMediaQuery.removeEventListener('change', handleDesktopScroll)
+    }
   }, [])
 
   useEffect(() => {
     setIsMobileMenuOpen(false)
-  }, [location.pathname])
+  }, [location.pathname, location.search, location.hash])
+
+  useEffect(() => {
+    document.body.style.overflow = isMobileMenuOpen ? 'hidden' : ''
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [isMobileMenuOpen])
 
   return (
     <header
@@ -111,12 +131,19 @@ function Navbar() {
         <button
           type="button"
           aria-label="Toggle menu"
+          aria-expanded={isMobileMenuOpen}
           className="rounded-lg p-1.5 hover:bg-black/10 md:hidden"
           onClick={() => setIsMobileMenuOpen((prev) => !prev)}
         >
-          <span className="block h-0.5 w-5 bg-current" />
-          <span className="mt-1 block h-0.5 w-5 bg-current" />
-          <span className="mt-1 block h-0.5 w-5 bg-current" />
+          {isMobileMenuOpen ? (
+            <span className="block text-xl leading-none">✕</span>
+          ) : (
+            <>
+              <span className="block h-0.5 w-5 bg-current" />
+              <span className="mt-1 block h-0.5 w-5 bg-current" />
+              <span className="mt-1 block h-0.5 w-5 bg-current" />
+            </>
+          )}
         </button>
 
         <nav className="hidden items-center justify-center gap-2 md:flex">
@@ -142,6 +169,7 @@ function Navbar() {
                       <Link
                         to={`/products?category=${encodeURIComponent(item.category)}&subCategory=${encodeURIComponent(subCategory)}`}
                         className="block rounded-md px-2 py-1.5 text-left text-sm text-[#5e2e25] transition hover:bg-[#f9ece5]"
+                        onClick={() => setIsMobileMenuOpen(false)}
                       >
                         {subCategory}
                       </Link>
@@ -185,14 +213,14 @@ function Navbar() {
       </div>
 
       <div
-        className={`fixed inset-0 z-40 bg-black/35 transition-opacity duration-300 md:hidden ${
+        className={`fixed inset-0 z-[60] bg-black/45 backdrop-blur-[1px] transition-opacity duration-300 md:hidden ${
           isMobileMenuOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
         }`}
         onClick={() => setIsMobileMenuOpen(false)}
       />
 
       <aside
-        className={`fixed right-0 top-0 z-50 h-screen w-[84%] max-w-sm bg-[#faf7ec] shadow-2xl transition-transform duration-300 ease-out md:hidden ${
+        className={`fixed right-0 top-0 z-[70] h-dvh w-[88%] max-w-sm bg-[#faf7ec] shadow-2xl transition-transform duration-300 ease-out md:hidden ${
           isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
@@ -223,6 +251,7 @@ function Navbar() {
                     <Link
                       to={`/products?category=${encodeURIComponent(item.category)}`}
                       className="block rounded-md px-3 py-2 text-sm font-semibold text-[#5f1f17] transition hover:bg-[#f9ece5]"
+                      onClick={() => setIsMobileMenuOpen(false)}
                     >
                       View all {item.category}
                     </Link>
@@ -232,6 +261,7 @@ function Navbar() {
                       <Link
                         to={`/products?category=${encodeURIComponent(item.category)}&subCategory=${encodeURIComponent(subCategory)}`}
                         className="block rounded-md px-3 py-2 text-sm text-[#6f4d42] transition hover:bg-[#f9ece5]"
+                        onClick={() => setIsMobileMenuOpen(false)}
                       >
                         {subCategory}
                       </Link>
@@ -249,6 +279,7 @@ function Navbar() {
                   key={link.label}
                   to={link.path}
                   className="rounded-full border border-[#ddc9b5] px-3 py-2 text-center text-sm font-medium text-[#5f1f17]"
+                  onClick={() => setIsMobileMenuOpen(false)}
                 >
                   {link.label}
                 </Link>
