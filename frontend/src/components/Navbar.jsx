@@ -1,8 +1,13 @@
 import { useEffect, useState } from 'react'
+import { Link, useLocation } from 'react-router-dom'
 
-const navLinks = ['About', 'Contact']
+const navLinks = [
+  { label: 'Products', path: '/products' },
+  { label: 'About', path: null },
+  { label: 'Contact', path: null },
+]
 const brandLogo =
-  'https://res.cloudinary.com/dkq4kvwrr/image/upload/v1777461585/Untitled_design_3_mhica6.png'
+  'https://res.cloudinary.com/dkq4kvwrr/image/upload/v1777467131/suvarnaStudiologo_cojcd7.png'
 const categories = [
   {
     category: 'Sarees',
@@ -63,6 +68,10 @@ const categories = [
 
 function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false)
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const location = useLocation()
+  const isHomePage = location.pathname === '/'
+  const useLightNavbar = isScrolled || !isHomePage
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 10)
@@ -72,40 +81,57 @@ function Navbar() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
+  useEffect(() => {
+    setIsMobileMenuOpen(false)
+  }, [location.pathname])
+
   return (
     <header
       className={`sticky top-0 z-50 transition-colors duration-300 ${
-        isScrolled ? 'bg-[#faf7ec] backdrop-blur' : 'bg-transparent'
+        useLightNavbar
+          ? 'bg-[#f9ece5] md:bg-[#faf7ec] backdrop-blur'
+          : 'bg-[#f9ece5] md:bg-black/20 md:backdrop-transparent'
       }`}
     >
       <div
-        className={`mx-auto flex w-full max-w-7xl items-center justify-between gap-6 px-4 py-1 md:px-8 ${
-          isScrolled
+        className={`mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-4 py-2 md:gap-6 md:px-8 md:py-3 ${
+          useLightNavbar
             ? 'text-black'
-            : 'text-white [text-shadow:0_1px_6px_rgba(0,0,0,0.75)]'
+            : 'text-black md:text-white'
         }`}
       >
-        <div className="flex items-center">
+        <Link to="/" className="flex items-center" aria-label="Go to home page">
           <img
             src={brandLogo}
             alt="Svarna Studio"
-            className="h-14 w-auto md:h-16"
+            className="h-8 w-auto md:h-11"
           />
-        </div>
+        </Link>
+
+        <button
+          type="button"
+          aria-label="Toggle menu"
+          className="rounded-lg p-1.5 hover:bg-black/10 md:hidden"
+          onClick={() => setIsMobileMenuOpen((prev) => !prev)}
+        >
+          <span className="block h-0.5 w-5 bg-current" />
+          <span className="mt-1 block h-0.5 w-5 bg-current" />
+          <span className="mt-1 block h-0.5 w-5 bg-current" />
+        </button>
 
         <nav className="hidden items-center justify-center gap-2 md:flex">
           {categories.map((item) => (
             <div key={item.category} className="group relative">
-              <button
-                type="button"
+              <Link
+                to={`/products?category=${encodeURIComponent(item.category)}`}
                 className={`rounded-full px-3 py-2 text-sm font-medium transition ${
-                  isScrolled
+                  useLightNavbar
                     ? 'text-black hover:bg-black/10'
-                    : 'text-white [text-shadow:0_1px_6px_rgba(0,0,0,0.75)] hover:bg-white/15'
+                    : 'text-white hover:bg-white/15'
                 }`}
               >
                 {item.category}
-              </button>
+              </Link>
               <div className="pointer-events-none absolute left-0 top-full z-50 mt-2 w-60 rounded-xl border border-[#e8cfc1] bg-white p-3 opacity-0 shadow-xl transition duration-150 [text-shadow:none] group-hover:pointer-events-auto group-hover:opacity-100">
                 <p className="border-b border-[#f0dfd4] pb-2 text-left text-xs font-semibold uppercase tracking-wider text-[#8f0019]">
                   {item.category}
@@ -113,12 +139,12 @@ function Navbar() {
                 <ul className="mt-2 space-y-1">
                   {item.subCategories.map((subCategory) => (
                     <li key={subCategory}>
-                      <a
-                        href="#"
+                      <Link
+                        to={`/products?category=${encodeURIComponent(item.category)}&subCategory=${encodeURIComponent(subCategory)}`}
                         className="block rounded-md px-2 py-1.5 text-left text-sm text-[#5e2e25] transition hover:bg-[#f9ece5]"
                       >
                         {subCategory}
-                      </a>
+                      </Link>
                     </li>
                   ))}
                 </ul>
@@ -129,20 +155,116 @@ function Navbar() {
 
         <nav className="hidden items-center gap-6 text-sm font-medium md:flex">
           {navLinks.map((link) => (
-            <a
-              key={link}
-              href="#"
-              className={`rounded-full px-3 py-2 transition ${
-                isScrolled
-                  ? 'text-black hover:bg-black/10'
-                  : 'text-white [text-shadow:0_1px_6px_rgba(0,0,0,0.75)] hover:bg-white/15'
-              }`}
-            >
-              {link}
-            </a>
+            link.path ? (
+              <Link
+                key={link.label}
+                to={link.path}
+                className={`rounded-full px-3 py-2 transition ${
+                  useLightNavbar
+                    ? 'text-black hover:bg-black/10'
+                    : 'text-white hover:bg-white/15'
+                }`}
+              >
+                {link.label}
+              </Link>
+            ) : (
+              <button
+                key={link.label}
+                type="button"
+                className={`rounded-full px-3 py-2 transition ${
+                  useLightNavbar
+                    ? 'text-black hover:bg-black/10'
+                    : 'text-white hover:bg-white/15'
+                }`}
+              >
+                {link.label}
+              </button>
+            )
           ))}
         </nav>
       </div>
+
+      <div
+        className={`fixed inset-0 z-40 bg-black/35 transition-opacity duration-300 md:hidden ${
+          isMobileMenuOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
+        }`}
+        onClick={() => setIsMobileMenuOpen(false)}
+      />
+
+      <aside
+        className={`fixed right-0 top-0 z-50 h-screen w-[84%] max-w-sm bg-[#faf7ec] shadow-2xl transition-transform duration-300 ease-out md:hidden ${
+          isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
+        }`}
+      >
+        <div className="flex items-center justify-between border-b border-[#e7dbc8] px-4 py-4">
+          <p className="text-sm font-semibold tracking-wide text-[#5f1f17]">Menu</p>
+          <button
+            type="button"
+            aria-label="Close menu"
+            className="rounded-lg p-2 text-[#5f1f17] hover:bg-[#f1dfd3]"
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="h-[calc(100vh-68px)] overflow-y-auto px-4 pb-6 pt-3">
+          <div className="space-y-2">
+            {categories.map((item) => (
+              <details
+                key={item.category}
+                className="rounded-xl border border-[#eadbcb] bg-white"
+              >
+                <summary className="cursor-pointer list-none px-4 py-3 text-sm font-semibold text-[#5f1f17]">
+                  {item.category}
+                </summary>
+                <ul className="border-t border-[#f3e6d8] px-2 py-2">
+                  <li>
+                    <Link
+                      to={`/products?category=${encodeURIComponent(item.category)}`}
+                      className="block rounded-md px-3 py-2 text-sm font-semibold text-[#5f1f17] transition hover:bg-[#f9ece5]"
+                    >
+                      View all {item.category}
+                    </Link>
+                  </li>
+                  {item.subCategories.map((subCategory) => (
+                    <li key={subCategory}>
+                      <Link
+                        to={`/products?category=${encodeURIComponent(item.category)}&subCategory=${encodeURIComponent(subCategory)}`}
+                        className="block rounded-md px-3 py-2 text-sm text-[#6f4d42] transition hover:bg-[#f9ece5]"
+                      >
+                        {subCategory}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            ))}
+          </div>
+
+          <div className="mt-5 grid grid-cols-3 gap-2">
+            {navLinks.map((link) =>
+              link.path ? (
+                <Link
+                  key={link.label}
+                  to={link.path}
+                  className="rounded-full border border-[#ddc9b5] px-3 py-2 text-center text-sm font-medium text-[#5f1f17]"
+                >
+                  {link.label}
+                </Link>
+              ) : (
+                <button
+                  key={link.label}
+                  type="button"
+                  className="rounded-full border border-[#ddc9b5] px-3 py-2 text-center text-sm font-medium text-[#5f1f17]"
+                >
+                  {link.label}
+                </button>
+              )
+            )}
+          </div>
+        </div>
+      </aside>
     </header>
   )
 }
