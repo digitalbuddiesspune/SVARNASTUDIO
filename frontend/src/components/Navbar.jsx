@@ -114,7 +114,7 @@ function Navbar() {
       }`}
     >
       <div
-        className={`mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-4 py-2 md:gap-6 md:px-8 md:py-3 ${
+        className={`mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-4 py-2.5 md:gap-6 md:px-8 md:py-3 ${
           useLightNavbar
             ? 'text-black'
             : 'text-black md:text-white'
@@ -124,7 +124,7 @@ function Navbar() {
           <img
             src={brandLogo}
             alt="Svarna Studio"
-            className="h-8 w-auto md:h-11"
+            className="h-9 w-auto md:h-11"
           />
         </Link>
 
@@ -213,14 +213,14 @@ function Navbar() {
       </div>
 
       <div
-        className={`fixed inset-0 z-[60] bg-black/45 backdrop-blur-[1px] transition-opacity duration-300 md:hidden ${
+        className={`fixed inset-0 z-[60] bg-black/35 transition-opacity duration-200 md:hidden ${
           isMobileMenuOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
         }`}
         onClick={() => setIsMobileMenuOpen(false)}
       />
 
       <aside
-        className={`fixed right-0 top-0 z-[70] h-dvh w-[88%] max-w-sm bg-[#faf7ec] shadow-2xl transition-transform duration-300 ease-out md:hidden ${
+        className={`fixed right-0 top-0 z-[70] h-dvh w-[88%] max-w-sm transform-gpu bg-[#faf7ec] shadow-xl transition-transform duration-200 ease-out will-change-transform md:hidden ${
           isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
