@@ -1,9 +1,16 @@
+const brandLogo =
+  'https://res.cloudinary.com/dkq4kvwrr/image/upload/v1777461585/Untitled_design_3_mhica6.png'
+
 function Footer() {
   return (
     <footer className="bg-[#4e1e17] text-[#f8e7dc]">
       <div className="mx-auto grid w-full max-w-7xl gap-8 px-4 py-12 md:grid-cols-3 md:px-8">
         <div>
-          <h3 className="font-serif text-2xl">Neha Saree</h3>
+          <img
+            src={brandLogo}
+            alt="Svarna Studio"
+            className="h-12 w-auto md:h-14"
+          />
           <p className="mt-3 text-sm leading-6 text-[#f4d3c5]">
             Timeless sarees crafted for every celebration and every day elegance.
           </p>
@@ -31,7 +38,7 @@ function Footer() {
         </div>
       </div>
       <div className="border-t border-[#7d4436] px-4 py-4 text-center text-xs text-[#f1c8b7]">
-        Copyright {new Date().getFullYear()} Neha Saree. All rights reserved.
+        Copyright {new Date().getFullYear()} Svarna Studio. All rights reserved.
       </div>
     </footer>
   )
