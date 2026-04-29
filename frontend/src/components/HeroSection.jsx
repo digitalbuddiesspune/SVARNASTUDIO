@@ -3,7 +3,7 @@ const heroBg =
 
 function HeroSection() {
   return (
-    <section className="relative -mt-[112px] h-[85vh] overflow-hidden">
+    <section className="relative -mt-[120px] h-[85vh] overflow-hidden">
       <img src={heroBg} alt="Elegant saree collection" className="block w-full h-auto" />
 
       <div className="absolute inset-0 bg-gradient-to-r from-[#2f130e]/65 via-[#602c20]/25 to-transparent" />

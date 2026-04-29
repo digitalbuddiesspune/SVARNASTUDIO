@@ -52,7 +52,7 @@ function Navbar() {
   return (
     <>
       <header className="relative z-40 bg-[#000000]/25 backdrop-blur">
-        <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-6 px-4 py-4 text-white md:px-8">
+        <div className="mx-auto border-b border-black/5 flex w-full max-w-7xl items-center justify-between gap-6 px-4 py-4 text-white md:px-8">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#87081b] text-lg font-semibold">
               n
