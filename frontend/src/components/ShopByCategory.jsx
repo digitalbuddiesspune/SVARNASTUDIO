@@ -37,14 +37,23 @@ function ShopByCategory() {
   return (
     <section className="bg-[#f8f4ea] py-10 md:py-16">
       <div className="mx-auto w-full max-w-7xl px-4 md:px-8">
-        <h2 className="text-center font-serif text-xl uppercase tracking-wide text-[#7b2d2a] md:text-3xl">
+        <h2 className="text-center font-serif text-3xl uppercase tracking-wide text-[#7b2d2a] md:text-5xl">
           Shop By Category
         </h2>
-        <div className="mx-auto mt-2 h-1 w-20 rounded-full bg-[#b69478]" />
+        <div className="mx-auto mt-2 flex w-fit items-center gap-2 text-[#b69478]">
+          <span className="h-px w-10 bg-[#b69478]" />
+          <span className="text-xs leading-none">❦</span>
+          <span className="h-px w-10 bg-[#b69478]" />
+        </div>
       </div>
       <div className="mx-auto mt-6 grid w-full max-w-7xl grid-cols-2 gap-3 px-4 sm:grid-cols-2 md:mt-8 md:gap-5 lg:grid-cols-5 md:px-8">
-        {categories.map((category) => (
-          <article key={category.title} className={category.offsetClass}>
+        {categories.map((category, index) => (
+          <article
+            key={category.title}
+            className={`${category.offsetClass} ${
+              index === categories.length - 1 ? 'col-span-2 justify-self-center sm:col-span-1' : ''
+            }`}
+          >
             <Link
               to={`/products?${new URLSearchParams({ category: category.title }).toString()}`}
               className="group block"

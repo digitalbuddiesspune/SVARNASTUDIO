@@ -111,11 +111,11 @@ const ornamentLine = (
 
 function ShopByOccasion() {
   return (
-    <article className="relative overflow-hidden bg-[#f6ecdc] py-8 md:py-10">
+    <article className="relative overflow-hidden bg-[#f6ecdc] pb-3 pt-4 md:pb-4 md:pt-5">
       <div className="pointer-events-none absolute left-0 top-0 h-16 w-16 rounded-br-[58px] border-b-[10px] border-r-[10px] border-[#8f1328] md:h-24 md:w-24 md:rounded-br-[78px]" />
       <div className="pointer-events-none absolute right-0 top-0 h-16 w-16 rounded-bl-[58px] border-b-[10px] border-l-[10px] border-[#8f1328] md:h-24 md:w-24 md:rounded-bl-[78px]" />
 
-      <h2 className="text-center font-serif text-3xl uppercase tracking-wide text-[#6f1b1d] md:text-[52px] pt-10">
+      <h2 className="pt-10 text-center font-serif text-3xl uppercase tracking-wide text-[#6f1b1d] md:text-5xl">
         Shop by Occasion
       </h2>
       <div className="mx-auto mt-2 flex w-fit items-center gap-3 text-[#8f1328]">
@@ -165,7 +165,7 @@ function ShopByOccasion() {
         ))}
       </div>
 
-      <div className="mt-8 h-6 w-full bg-[#8f1328] bg-[radial-gradient(circle_at_center,_#d9b27c_0.6px,_transparent_0.8px)] [background-size:14px_14px] md:h-7" />
+      <div className="mt-4 h-6 w-full bg-[#8f1328] bg-[radial-gradient(circle_at_center,_#d9b27c_0.6px,_transparent_0.8px)] [background-size:14px_14px] md:h-7" />
     </article>
   )
 }

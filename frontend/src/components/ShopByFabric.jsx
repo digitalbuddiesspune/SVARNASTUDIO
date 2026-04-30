@@ -3,31 +3,31 @@ const fabricItems = [
     name: 'LINEN',
     meta: 'Breathable and effortless for summer days',
     image:
-      'https://res.cloudinary.com/dkq4kvwrr/image/upload/q_auto/f_auto/v1777555046/ChatGPT_Image_Apr_30_2026_06_46_31_PM_1_herpbo.png',
+      'https://images.pexels.com/photos/1462637/pexels-photo-1462637.jpeg?auto=compress&cs=tinysrgb&w=700',
   },
   {
     name: 'COTTON',
     meta: 'Lightweight comfort for daily wear',
     image:
-      'https://res.cloudinary.com/dkq4kvwrr/image/upload/q_auto/f_auto/v1777555190/ChatGPT_Image_Apr_30_2026_06_49_08_PM_1_qlzptj.png',
+      'https://images.pexels.com/photos/29175924/pexels-photo-29175924.jpeg?auto=compress&cs=tinysrgb&w=700',
   },
   {
     name: 'SILK BLEND',
     meta: 'Subtle sheen with rich drape',
     image:
-      'https://res.cloudinary.com/dkq4kvwrr/image/upload/q_auto/f_auto/v1777555494/ChatGPT_Image_Apr_30_2026_06_54_12_PM_1_x7lpmg.png',
+      'https://images.pexels.com/photos/29175928/pexels-photo-29175928.jpeg?auto=compress&cs=tinysrgb&w=700',
   },
   {
     name: 'CHIFFON',
     meta: 'Flowy silhouettes with delicate movement',
     image:
-      'https://res.cloudinary.com/dkq4kvwrr/image/upload/q_auto/f_auto/v1777555680/ChatGPT_Image_Apr_30_2026_06_57_17_PM_1_piqxbv.png',
+      'https://images.pexels.com/photos/2510089/pexels-photo-2510089.jpeg?auto=compress&cs=tinysrgb&w=700',
   },
 ]
 
 function ShopByFabric() {
   return (
-    <article className="relative overflow-hidden bg-[#f4ecdf] py-8 md:py-10">
+    <article className="relative overflow-hidden bg-[#f4ecdf] pb-3 pt-4 md:pb-4 md:pt-5">
       
 
       <h2 className="text-center font-serif text-3xl uppercase tracking-wide text-[#6f1b1d] md:text-5xl">
@@ -73,7 +73,7 @@ function ShopByFabric() {
         ))}
       </div>
 
-      <div className="mt-8 h-6 w-full bg-[#8f1328] bg-[radial-gradient(circle_at_center,_#d9b27c_0.6px,_transparent_0.8px)] [background-size:14px_14px] md:h-7" />
+      <div className="mt-4 h-6 w-full bg-[#8f1328] bg-[radial-gradient(circle_at_center,_#d9b27c_0.6px,_transparent_0.8px)] [background-size:14px_14px] md:h-7" />
     </article>
   )
 }

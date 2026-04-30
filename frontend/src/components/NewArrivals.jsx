@@ -108,9 +108,19 @@ function NewArrivals() {
       }}
     >
       <div className="relative px-4 pb-7 md:px-8 md:pb-9">
-        <h2 className="pt-2 text-center font-serif text-2xl uppercase tracking-wide text-white md:pt-3 md:text-4xl">
-          New Arrivals
-        </h2>
+        <div className="pt-5 text-center md:pt-7">
+          <p className="text-[11px] font-semibold uppercase tracking-[2px] text-[#f2d9c5] md:text-xs">
+            Just Landed
+          </p>
+          <h2 className="mt-1 font-serif text-3xl uppercase tracking-[1.5px] text-white md:text-5xl">
+            New Arrivals
+          </h2>
+          <div className="mx-auto mt-2 flex w-fit items-center gap-3 text-[#f2d9c5]">
+            <span className="h-px w-14 bg-[#f2d9c5]/70 md:w-20" />
+            <span className="text-sm leading-none">❦</span>
+            <span className="h-px w-14 bg-[#f2d9c5]/70 md:w-20" />
+          </div>
+        </div>
 
         {isLoading && <p className="mt-6 text-center text-sm text-[#f1d6c2]">Loading products...</p>}
         {error && <p className="mt-6 text-center text-sm text-[#ffd4d4]">{error}</p>}

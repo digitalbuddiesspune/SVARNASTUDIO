@@ -8,15 +8,15 @@ function HomepageFlow() {
   return (
     <>
       <ShopByCategory />
-      <section className="bg-[#faf7ec] py-14 md:py-16">
+      <section className="bg-[#f6ecdf] py-0">
         <NewArrivals />
         <div className="mt-0">
           <ShopByOccasion />
         </div>
-        <div className="mt-10">
+        <div className="mt-0">
           <ShopByFabric />
         </div>
-        <div className="mx-auto mt-10 w-full max-w-7xl space-y-10 px-4 md:px-8">
+        <div className="mt-0 w-full">
           <TrendingNow />
         </div>
       </section>
