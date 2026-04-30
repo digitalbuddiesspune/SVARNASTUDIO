@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom'
+
 const fabricItems = [
   {
     name: 'LINEN',
@@ -41,8 +43,9 @@ function ShopByFabric() {
 
       <div className="mx-auto mt-0 grid w-full max-w-[1180px] grid-cols-2 gap-3 px-3 md:gap-6 md:px-8 lg:grid-cols-4">
         {fabricItems.map((item) => (
-          <article
+          <Link
             key={item.name}
+            to={`/products?${new URLSearchParams({ fabric: item.name }).toString()}`}
             className="mx-auto w-full max-w-[168px] rounded-[16px] border border-[#a45858] bg-transparent p-2 text-center md:max-w-[220px]"
           >
             <div className="overflow-hidden rounded-[12px] border border-[#d8c4b1] bg-[#efe4d7] p-1">
@@ -69,7 +72,7 @@ function ShopByFabric() {
               <span className="text-[11px] leading-none">❦</span>
               <span className="h-px w-6 bg-[#b98c8c]" />
             </div>
-          </article>
+          </Link>
         ))}
       </div>
 

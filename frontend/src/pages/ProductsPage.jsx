@@ -11,9 +11,12 @@ function ProductsPage() {
   const [searchParams] = useSearchParams()
   const selectedCategory = searchParams.get('category') || ''
   const selectedSubCategory = searchParams.get('subCategory') || ''
-  const pageHeading = selectedSubCategory
-    ? `${selectedCategory} - ${selectedSubCategory}`
-    : selectedCategory || 'All Categories'
+  const selectedFabric = searchParams.get('fabric') || ''
+  const pageHeading = selectedFabric
+    ? `${selectedFabric} Collection`
+    : selectedSubCategory
+      ? `${selectedCategory} - ${selectedSubCategory}`
+      : selectedCategory || 'All Categories'
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -25,6 +28,9 @@ function ProductsPage() {
         if (selectedSubCategory) {
           query.set('subCategory', selectedSubCategory)
         }
+        if (selectedFabric) {
+          query.set('fabric', selectedFabric)
+        }
 
         const response = await fetch(
           `${API_BASE_URL}/api/products${query.toString() ? `?${query.toString()}` : ''}`,
@@ -33,7 +39,14 @@ function ProductsPage() {
           throw new Error('Failed to fetch products')
         }
         const data = await response.json()
-        setProducts(data)
+        const filteredProducts = selectedFabric
+          ? data.filter(
+              (product) =>
+                String(product.fabric || '').trim().toLowerCase() ===
+                selectedFabric.trim().toLowerCase(),
+            )
+          : data
+        setProducts(filteredProducts)
       } catch (fetchError) {
         setError(fetchError.message)
       } finally {
@@ -42,7 +55,7 @@ function ProductsPage() {
     }
 
     fetchProducts()
-  }, [selectedCategory, selectedSubCategory])
+  }, [selectedCategory, selectedSubCategory, selectedFabric])
 
   return (
     <>
@@ -56,6 +69,9 @@ function ProductsPage() {
               Showing: {selectedCategory || 'All Categories'}
               {selectedSubCategory ? ` / ${selectedSubCategory}` : ''}
             </p>
+          )}
+          {selectedFabric && (
+            <p className="mt-2 text-sm text-[#7a5b4f]">Showing fabric: {selectedFabric}</p>
           )}
 
           {isLoading && <p className="mt-8 text-sm text-[#7a5b4f]">Loading products...</p>}
