@@ -13,8 +13,10 @@ function HomepageFlow() {
         <div className="mt-0">
           <ShopByOccasion />
         </div>
-        <div className="mx-auto mt-10 w-full max-w-7xl space-y-10 px-4 md:px-8">
+        <div className="mt-10">
           <ShopByFabric />
+        </div>
+        <div className="mx-auto mt-10 w-full max-w-7xl space-y-10 px-4 md:px-8">
           <TrendingNow />
         </div>
       </section>
