@@ -1,82 +1,171 @@
 const occasionItems = [
   {
     name: 'WEDDING',
-    icon: '❁',
+    icon: 'wedding',
     image:
       'https://images.pexels.com/photos/27055096/pexels-photo-27055096.jpeg?auto=compress&cs=tinysrgb&w=700',
   },
   {
     name: 'FESTIVE',
-    icon: '🪔',
+    icon: 'festive',
     image:
       'https://images.pexels.com/photos/29175928/pexels-photo-29175928.jpeg?auto=compress&cs=tinysrgb&w=700',
   },
   {
     name: 'PARTY WEAR',
-    icon: '🍸',
+    icon: 'party',
     image:
       'https://images.pexels.com/photos/11389427/pexels-photo-11389427.jpeg?auto=compress&cs=tinysrgb&w=700',
   },
   {
     name: 'DAY OUT',
-    icon: '☼',
+    icon: 'day',
     image:
       'https://images.pexels.com/photos/1462637/pexels-photo-1462637.jpeg?auto=compress&cs=tinysrgb&w=700',
   },
   {
     name: 'WORK WEAR',
-    icon: '▭',
+    icon: 'work',
     image:
       'https://images.pexels.com/photos/6626903/pexels-photo-6626903.jpeg?auto=compress&cs=tinysrgb&w=700',
   },
 ]
 
+const occasionIconMap = {
+  wedding: (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-10 w-10 text-[#e3c28d]">
+      <path
+        d="M7 16.2a4.2 4.2 0 1 1 2.9-7.3l2.1 2 2.1-2a4.2 4.2 0 1 1 .1 6l-2.2-2-2.1 2a4.1 4.1 0 0 1-2.9 1.3Z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  ),
+  festive: (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-10 w-10 text-[#e3c28d]">
+      <path
+        d="M8 16h8c-1.4-1.3-2.2-2.3-2.2-3.8 0-1.2.6-2.3 1.8-3-2 .2-3.4 1.3-3.6 2.8-.2-1.5-1.6-2.6-3.6-2.8 1.2.7 1.8 1.8 1.8 3 0 1.5-.8 2.5-2.2 3.8ZM9.7 16h4.6l.8 1.8H8.9l.8-1.8Z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  ),
+  party: (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-10 w-10 text-[#e3c28d]">
+      <path
+        d="M6 5h12M8.2 5l3.8 5.3L15.8 5M12 10.3V17m-3 0h6"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  ),
+  day: (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-10 w-10 text-[#e3c28d]">
+      <circle cx="12" cy="12" r="3.4" fill="none" stroke="currentColor" strokeWidth="1.7" />
+      <path
+        d="M12 4.5V2.8M12 21.2v-1.7M6.8 6.8 5.6 5.6M18.4 18.4l-1.2-1.2M4.5 12H2.8M21.2 12h-1.7M6.8 17.2l-1.2 1.2M18.4 5.6l-1.2 1.2"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+      />
+    </svg>
+  ),
+  work: (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-10 w-10 text-[#e3c28d]">
+      <path
+        d="M3.8 8.8h16.4v9.4H3.8zM8.5 8.8v-1a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v1"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  ),
+}
+
+const ornamentLine = (
+  <svg viewBox="0 0 140 16" aria-hidden="true" className="h-3.5 w-20 text-[#dcb987]">
+    <path d="M2 8h44M94 8h44" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+    <path
+      d="M70 11c-2.5 0-5-1.4-6.5-3 1.5-1.7 4-3 6.5-3 2.5 0 5 1.3 6.5 3-1.5 1.6-4 3-6.5 3Z"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path d="M63.5 8h13" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+  </svg>
+)
+
 function ShopByOccasion() {
   return (
-    <article
-      className="relative overflow-hidden bg-center bg-no-repeat py-8 md:py-10"
-      style={{
-        backgroundImage:
-          "url('https://res.cloudinary.com/dkq4kvwrr/image/upload/q_auto/f_auto/v1777546379/ChatGPT_Image_Apr_30_2026_04_22_02_PM_1_opdvio.png')",
-        backgroundSize: '100% 100%',
-      }}
-    >
+    <article className="relative overflow-hidden bg-[#f6ecdc] py-8 md:py-10">
+      <div className="pointer-events-none absolute left-0 top-0 h-16 w-16 rounded-br-[58px] border-b-[10px] border-r-[10px] border-[#8f1328] md:h-24 md:w-24 md:rounded-br-[78px]" />
+      <div className="pointer-events-none absolute right-0 top-0 h-16 w-16 rounded-bl-[58px] border-b-[10px] border-l-[10px] border-[#8f1328] md:h-24 md:w-24 md:rounded-bl-[78px]" />
 
-      <h2 className="text-center font-serif text-2xl uppercase tracking-wide text-[#7a2a2a] md:text-5xl">
+      <h2 className="text-center font-serif text-3xl uppercase tracking-wide text-[#6f1b1d] md:text-[52px] pt-10">
         Shop by Occasion
       </h2>
-      <div className="mx-auto mt-2 h-1 w-28 rounded-full bg-[#7a2a2a]/70" />
+      <div className="mx-auto mt-2 flex w-fit items-center gap-3 text-[#8f1328]">
+        <span className="h-px w-16 bg-[#8f1328]/70 md:w-28" />
+        <span className="text-xl leading-none">❦</span>
+        <span className="h-px w-16 bg-[#8f1328]/70 md:w-28" />
+      </div>
 
-      <div className="mt-8 grid grid-cols-2 gap-3 px-2 sm:grid-cols-3 md:px-4 lg:grid-cols-5">
-        {occasionItems.map((item) => (
+      <div className="mx-auto mt-8 grid w-full max-w-[1180px] grid-cols-2 gap-3 px-3 sm:grid-cols-3 md:gap-5 md:px-6 lg:grid-cols-5">
+        {occasionItems.map((item, index) => (
           <article
             key={item.name}
-            className="mx-auto w-full max-w-[130px] overflow-hidden rounded-[9px] border border-[#d2af89] bg-[#f8efe1] shadow-[0_2px_8px_rgba(79,13,24,0.2)] sm:max-w-[188px]"
+            className={`mx-auto w-full max-w-[170px] overflow-hidden rounded-[12px] sm:max-w-[198px] ${
+              index === occasionItems.length - 1 ? 'col-span-2 justify-self-center sm:col-span-1' : ''
+            }`}
           >
             <div
-              className="overflow-hidden bg-[#d4a66f]"
+              className="bg-[#d2a06f] p-[2px]"
               style={{
                 clipPath:
-                  'polygon(0% 100%, 0% 15%, 6% 8%, 14% 4%, 24% 8%, 34% 2%, 44% 8%, 50% 0%, 56% 8%, 66% 2%, 76% 8%, 86% 4%, 94% 8%, 100% 15%, 100% 100%)',
+                  'polygon(0% 100%, 0% 20%, 6% 15%, 13% 14%, 18% 8%, 25% 6%, 35% 7%, 44% 3%, 50% 0%, 56% 3%, 65% 7%, 75% 6%, 82% 8%, 87% 14%, 94% 15%, 100% 20%, 100% 100%)',
               }}
             >
-              <img
-                src={item.image}
-                alt={item.name}
-                className="h-52 w-full object-cover sm:h-[238px]"
-                loading="lazy"
-              />
+              <div
+                className="overflow-hidden"
+                style={{
+                  clipPath:
+                    'polygon(0% 100%, 0% 20%, 6% 15%, 13% 14%, 18% 8%, 25% 6%, 35% 7%, 44% 3%, 50% 0%, 56% 3%, 65% 7%, 75% 6%, 82% 8%, 87% 14%, 94% 15%, 100% 20%, 100% 100%)',
+                }}
+              >
+                <img
+                  src={item.image}
+                  alt={item.name}
+                  className="h-[230px] w-full object-cover sm:h-[290px]"
+                  loading="lazy"
+                />
+              </div>
             </div>
-            <div className="bg-gradient-to-b from-[#981f35] to-[#7c1021] px-2 py-3 text-center text-[#f2d7b8] sm:py-4">
-              <p className="text-[19px] leading-none sm:text-[22px]">{item.icon}</p>
-              <h3 className="mt-1 font-serif text-[13px] uppercase tracking-wide sm:text-lg">
+            <div className="border-t border-[#bf8f5e] bg-[#861229] px-2 pb-3 pt-3 text-center text-[#f2d7b8] sm:pb-4 sm:pt-4">
+              <div className="flex justify-center">{occasionIconMap[item.icon]}</div>
+              <h3 className="mt-2 font-serif text-[12px] uppercase tracking-[1.3px] text-[#f0ddc2] sm:text-[14px]">
                 {item.name}
               </h3>
-              <p className="mt-1 text-[10px] leading-none tracking-widest">❦</p>
+              <div className="mt-1.5 flex justify-center">{ornamentLine}</div>
             </div>
           </article>
         ))}
       </div>
+
+      <div className="mt-8 h-6 w-full bg-[#8f1328] bg-[radial-gradient(circle_at_center,_#d9b27c_0.6px,_transparent_0.8px)] [background-size:14px_14px] md:h-7" />
     </article>
   )
 }
