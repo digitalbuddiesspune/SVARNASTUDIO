@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 
 const heroImages = [
   'https://res.cloudinary.com/dkq4kvwrr/image/upload/v1777457829/ChatGPT_Image_Apr_29_2026_03_43_49_PM_1_cbgkqk.png',
@@ -46,13 +47,13 @@ function HeroSection() {
               Discover handcrafted sarees designed to celebrate timeless elegance
               with modern charm.
             </p>
-            <button
-              type="button"
+            <Link
+              to="/products"
               className="mt-4 inline-flex items-center gap-2 rounded-full bg-[#8f0019] px-5 py-2 text-xs font-semibold text-white shadow-lg transition hover:bg-[#730014] md:mt-7 md:px-8 md:py-3 md:text-sm"
             >
               Explore Collection
               <span aria-hidden="true">→</span>
-            </button>
+            </Link>
           </div>
         </div>
       </div>
