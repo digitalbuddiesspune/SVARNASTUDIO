@@ -21,19 +21,13 @@ function HeroSection() {
 
   return (
     <section className="relative mt-0 aspect-[4/4] overflow-hidden md:-mt-[96px] md:h-[85vh] md:aspect-auto">
-      <img
-        src={heroImages[activeImageIndex]}
-        alt="Elegant ethnic wear collection"
-        className="block h-full w-full object-cover md:hidden"
-      />
-
-      <div className="absolute inset-0 hidden md:block">
+      <div className="absolute inset-0">
         {heroImages.map((image, index) => (
           <img
             key={image}
             src={image}
             alt="Elegant ethnic wear collection"
-            className={`absolute inset-0 h-auto w-full transition-opacity duration-1000 ease-in-out ${
+            className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ease-in-out ${
               index === activeImageIndex ? 'opacity-100' : 'opacity-0'
             }`}
           />
