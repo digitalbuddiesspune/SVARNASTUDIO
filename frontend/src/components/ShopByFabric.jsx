@@ -27,36 +27,53 @@ const fabricItems = [
 
 function ShopByFabric() {
   return (
-    <article className="py-8 md:py-10">
-      <h2 className="text-center font-serif text-2xl uppercase tracking-wide text-[#7a2b2a] md:text-4xl">
+    <article className="relative overflow-hidden bg-[#f4ecdf] py-8 md:py-10">
+      
+
+      <h2 className="text-center font-serif text-3xl uppercase tracking-wide text-[#6f1b1d] md:text-5xl">
         Shop by Fabric
       </h2>
-      <div className="mx-auto mt-2 h-px w-44 bg-[#b77873]" />
+      <div className="mx-auto mt-2 flex w-fit items-center gap-3 text-[#8f1328]">
+        <span className="h-px w-16 bg-[#8f1328]/70 md:w-24" />
+        <span className="text-xl leading-none">❦</span>
+        <span className="h-px w-16 bg-[#8f1328]/70 md:w-24" />
+      </div>
 
-      <div className="mt-8 grid gap-4 px-4 sm:grid-cols-2 md:px-8 lg:grid-cols-4">
+      <div className="mx-auto mt-0 grid w-full max-w-[1180px] grid-cols-2 gap-3 px-3 md:gap-6 md:px-8 lg:grid-cols-4">
         {fabricItems.map((item) => (
           <article
             key={item.name}
-            className="mx-auto w-full max-w-[210px] rounded-[16px] border border-[#b87468] bg-[#fbf6ee] p-2 text-center md:max-w-[238px]"
+            className="mx-auto w-full max-w-[168px] rounded-[16px] border border-[#a45858] bg-transparent p-2 text-center md:max-w-[220px]"
           >
-            <div className="overflow-hidden rounded-[12px] border border-[#e9ddd0] bg-white">
+            <div className="overflow-hidden rounded-[12px] border border-[#d8c4b1] bg-[#efe4d7] p-1">
               <img
                 src={item.image}
                 alt={item.name}
-                className="h-80 w-full object-cover md:h-[360px]"
+                className="h-[165px] w-full rounded-[10px] object-cover md:h-[250px]"
                 loading="lazy"
               />
             </div>
-            <p className="mx-auto mt-2 h-px w-28 bg-[#d9b1aa]" />
-            <p className="text-[#a63c44]">✽</p>
-            <h3 className="font-serif text-3xl uppercase text-[#842b2c] md:text-2xl">{item.name}</h3>
-            <p className="mx-auto mt-2 max-w-[200px] font-serif text-2xl leading-7 text-[#5f403d] md:text-base md:leading-6">
+            <div className="mx-auto mt-0 flex w-fit items-center gap-2 text-[#8f1328]">
+              <span className="h-px w-9 bg-[#b98c8c]" />
+              <span className="text-sm leading-none">✤</span>
+              <span className="h-px w-9 bg-[#b98c8c]" />
+            </div>
+            <h3 className="mt-1 font-serif text-lg uppercase tracking-wide text-[#6f1b1d] md:text-[30px] md:leading-none">
+              {item.name}
+            </h3>
+            <p className="mx-auto mt-2 max-w-[170px] font-serif text-[11px] italic leading-4 text-[#5f403d] md:max-w-[190px] md:text-[18px] md:leading-6">
               {item.meta}
             </p>
-            <p className="mt-2 text-[#b06f6f]">❦</p>
+            <div className="mx-auto mt-3 flex w-fit items-center gap-2 text-[#8f1328]">
+              <span className="h-px w-6 bg-[#b98c8c]" />
+              <span className="text-[11px] leading-none">❦</span>
+              <span className="h-px w-6 bg-[#b98c8c]" />
+            </div>
           </article>
         ))}
       </div>
+
+      <div className="mt-8 h-6 w-full bg-[#8f1328] bg-[radial-gradient(circle_at_center,_#d9b27c_0.6px,_transparent_0.8px)] [background-size:14px_14px] md:h-7" />
     </article>
   )
 }
