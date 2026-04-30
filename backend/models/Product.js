@@ -117,6 +117,16 @@ const productSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+
+    isTrendingNow: {
+      type: Boolean,
+      default: false,
+    },
+
+    isNewArrival: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,

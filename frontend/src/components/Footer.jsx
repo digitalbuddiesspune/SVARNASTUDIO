@@ -9,7 +9,7 @@ function Footer() {
           <img
             src={brandLogo}
             alt="Svarna Studio"
-            className="h-12 w-auto md:h-16"
+            className="h-24 w-auto md:h-25"
           />
           <p className="mt-3 text-sm leading-6 text-[#f4d3c5]">
             Timeless sarees crafted for every celebration and every day elegance.

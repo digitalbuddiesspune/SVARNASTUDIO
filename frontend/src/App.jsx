@@ -1,17 +1,24 @@
 import Navbar from './components/Navbar'
+import AdminLoginPage from './pages/AdminLoginPage'
+import AdminPanelPage from './pages/AdminPanelPage'
 import HomePage from './pages/HomePage'
 import ProductDetailPage from './pages/ProductDetailPage'
 import ProductsPage from './pages/ProductsPage'
-import { Route, Routes } from 'react-router-dom'
+import { Route, Routes, useLocation } from 'react-router-dom'
 
 function App() {
+  const location = useLocation()
+  const isAdminRoute = location.pathname.startsWith('/admin')
+
   return (
     <div className="min-h-screen bg-[#faf6f0] text-[#4d2018]">
-      <Navbar />
+      {!isAdminRoute && <Navbar />}
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/products" element={<ProductsPage />} />
         <Route path="/products/:id" element={<ProductDetailPage />} />
+        <Route path="/admin" element={<AdminLoginPage />} />
+        <Route path="/admin/panel" element={<AdminPanelPage />} />
       </Routes>
     </div>
   )
