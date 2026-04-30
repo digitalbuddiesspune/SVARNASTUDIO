@@ -111,7 +111,7 @@ function TrendingNow() {
       )}
 
       {!isLoading && !error && trendingProducts.length === 0 && (
-        <p className="relative mx-auto mt-6 w-full max-w-7xl text-sm text-[#6f4d42]">
+        <p className="relative mx-auto mt-6 w-full max-w-7xl text-sm text-[#6f4d42] mb-10 md:mb-20">
           Trending products will appear here soon.
         </p>
       )}
