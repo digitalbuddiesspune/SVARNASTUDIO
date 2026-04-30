@@ -107,7 +107,7 @@ function Navbar() {
 
   return (
     <header
-      className={`sticky top-0 z-50 transition-colors duration-300 ${
+      className={`sticky top-0 z-50 border-b border-black/5 transition-colors duration-300 ${
         useLightNavbar
           ? 'bg-[#f9ece5] md:bg-[#faf7ec] backdrop-blur'
           : 'bg-[#f9ece5] md:bg-black/20 md:backdrop-transparent'
