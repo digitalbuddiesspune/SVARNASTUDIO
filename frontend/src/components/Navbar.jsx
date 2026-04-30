@@ -99,6 +99,20 @@ function Navbar() {
   }, [location.pathname, location.search, location.hash])
 
   useEffect(() => {
+    const desktopMediaQuery = window.matchMedia('(min-width: 768px)')
+    const handleViewportChange = (event) => {
+      if (event.matches) {
+        setIsMobileMenuOpen(false)
+      }
+    }
+
+    desktopMediaQuery.addEventListener('change', handleViewportChange)
+    return () => {
+      desktopMediaQuery.removeEventListener('change', handleViewportChange)
+    }
+  }, [])
+
+  useEffect(() => {
     document.body.style.overflow = isMobileMenuOpen ? 'hidden' : ''
     return () => {
       document.body.style.overflow = ''
@@ -212,18 +226,18 @@ function Navbar() {
         </nav>
       </div>
 
-      <div
-        className={`fixed inset-0 z-[60] bg-black/35 transition-opacity duration-200 md:hidden ${
-          isMobileMenuOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
-        }`}
-        onClick={() => setIsMobileMenuOpen(false)}
-      />
+      {isMobileMenuOpen && (
+        <div
+          className="fixed inset-0 z-[60] bg-black/35 transition-opacity duration-200 md:hidden"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
 
-      <aside
-        className={`fixed right-0 top-0 z-[70] h-dvh w-[88%] max-w-sm transform-gpu bg-[#faf7ec] shadow-xl transition-transform duration-200 ease-out will-change-transform md:hidden ${
-          isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
-        }`}
-      >
+      {isMobileMenuOpen && (
+        <aside
+          aria-hidden={!isMobileMenuOpen}
+          className="fixed right-0 top-0 z-[70] h-dvh w-[88%] max-w-sm transform-gpu bg-[#faf7ec] shadow-xl transition-all duration-200 ease-out will-change-transform md:hidden"
+        >
         <div className="flex items-center justify-between border-b border-[#e7dbc8] px-4 py-4">
           <p className="text-sm font-semibold tracking-wide text-[#5f1f17]">Menu</p>
           <button
@@ -295,7 +309,8 @@ function Navbar() {
             )}
           </div>
         </div>
-      </aside>
+        </aside>
+      )}
     </header>
   )
 }

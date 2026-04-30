@@ -76,7 +76,7 @@ function ProductsPage() {
             </div>
           )}
 
-          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
             {products.map((product) => (
               <article
                 key={product._id}
@@ -90,7 +90,7 @@ function ProductsPage() {
                   />
                 </Link>
                 <div className="p-3">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-[#8f0019]">
+                  <p className="hidden text-xs font-semibold uppercase tracking-wider text-[#8f0019] sm:block">
                     {product.category} - {product.subCategory}
                   </p>
                   <Link to={`/products/${product._id}`}>
