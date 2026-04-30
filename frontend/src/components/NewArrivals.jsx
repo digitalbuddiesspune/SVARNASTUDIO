@@ -108,7 +108,7 @@ function NewArrivals() {
       }}
     >
       <div className="relative px-4 pb-7 md:px-8 md:pb-9">
-        <h2 className="mt-3 text-center font-serif text-xl uppercase tracking-wider text-[#f2d9c5] md:mt-4 md:text-4xl">
+        <h2 className="pt-2 text-center font-serif text-2xl uppercase tracking-wide text-white md:pt-3 md:text-4xl">
           New Arrivals
         </h2>
 

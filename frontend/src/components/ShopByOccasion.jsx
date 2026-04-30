@@ -3,31 +3,31 @@ const occasionItems = [
     name: 'WEDDING',
     icon: 'wedding',
     image:
-      'https://images.pexels.com/photos/27055096/pexels-photo-27055096.jpeg?auto=compress&cs=tinysrgb&w=700',
+      'https://res.cloudinary.com/dkq4kvwrr/image/upload/q_auto/f_auto/v1777548349/ChatGPT_Image_Apr_30_2026_04_54_41_PM_1_1_vc1g9b.png',
   },
   {
     name: 'FESTIVE',
     icon: 'festive',
     image:
-      'https://images.pexels.com/photos/29175928/pexels-photo-29175928.jpeg?auto=compress&cs=tinysrgb&w=700',
+      'https://res.cloudinary.com/dkq4kvwrr/image/upload/q_auto/f_auto/v1777548609/ChatGPT_Image_Apr_30_2026_04_59_09_PM_1_1_cgi3a6.png',
   },
   {
     name: 'PARTY WEAR',
     icon: 'party',
     image:
-      'https://images.pexels.com/photos/11389427/pexels-photo-11389427.jpeg?auto=compress&cs=tinysrgb&w=700',
+      'https://res.cloudinary.com/dkq4kvwrr/image/upload/q_auto/f_auto/v1777548864/ChatGPT_Image_Apr_30_2026_05_03_48_PM_1_nwqm7e.png',
   },
   {
     name: 'DAY OUT',
     icon: 'day',
     image:
-      'https://images.pexels.com/photos/1462637/pexels-photo-1462637.jpeg?auto=compress&cs=tinysrgb&w=700',
+      'https://res.cloudinary.com/dkq4kvwrr/image/upload/q_auto/f_auto/v1777549023/ChatGPT_Image_Apr_30_2026_05_06_17_PM_1_dlw5xd.png',
   },
   {
     name: 'WORK WEAR',
     icon: 'work',
     image:
-      'https://images.pexels.com/photos/6626903/pexels-photo-6626903.jpeg?auto=compress&cs=tinysrgb&w=700',
+      'https://res.cloudinary.com/dkq4kvwrr/image/upload/q_auto/f_auto/v1777549172/ChatGPT_Image_Apr_30_2026_05_09_00_PM_1_rb3oyb.png',
   },
 ]
 
