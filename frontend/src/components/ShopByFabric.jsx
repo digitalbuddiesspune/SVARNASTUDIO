@@ -3,25 +3,25 @@ const fabricItems = [
     name: 'LINEN',
     meta: 'Breathable and effortless for summer days',
     image:
-      'https://images.pexels.com/photos/1462637/pexels-photo-1462637.jpeg?auto=compress&cs=tinysrgb&w=700',
+      'https://res.cloudinary.com/dkq4kvwrr/image/upload/q_auto/f_auto/v1777555046/ChatGPT_Image_Apr_30_2026_06_46_31_PM_1_herpbo.png',
   },
   {
     name: 'COTTON',
     meta: 'Lightweight comfort for daily wear',
     image:
-      'https://images.pexels.com/photos/29175924/pexels-photo-29175924.jpeg?auto=compress&cs=tinysrgb&w=700',
+      'https://res.cloudinary.com/dkq4kvwrr/image/upload/q_auto/f_auto/v1777555190/ChatGPT_Image_Apr_30_2026_06_49_08_PM_1_qlzptj.png',
   },
   {
     name: 'SILK BLEND',
     meta: 'Subtle sheen with rich drape',
     image:
-      'https://images.pexels.com/photos/29175928/pexels-photo-29175928.jpeg?auto=compress&cs=tinysrgb&w=700',
+      'https://res.cloudinary.com/dkq4kvwrr/image/upload/q_auto/f_auto/v1777555494/ChatGPT_Image_Apr_30_2026_06_54_12_PM_1_x7lpmg.png',
   },
   {
     name: 'CHIFFON',
     meta: 'Flowy silhouettes with delicate movement',
     image:
-      'https://images.pexels.com/photos/2510089/pexels-photo-2510089.jpeg?auto=compress&cs=tinysrgb&w=700',
+      'https://res.cloudinary.com/dkq4kvwrr/image/upload/q_auto/f_auto/v1777555680/ChatGPT_Image_Apr_30_2026_06_57_17_PM_1_piqxbv.png',
   },
 ]
 
