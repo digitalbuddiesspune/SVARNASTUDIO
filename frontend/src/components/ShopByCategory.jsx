@@ -1,40 +1,68 @@
+import { Link } from 'react-router-dom'
+
 const categories = [
   {
-    title: 'Wedding Collection',
-    description: 'Rich zari borders and festive shades for grand celebrations.',
+    title: 'Sarees',
+    image:
+      'https://res.cloudinary.com/dkq4kvwrr/image/upload/v1777536140/43f92fce-17f1-4cf6-969a-a571ab64c611.png',
+    offsetClass: 'md:mt-0',
   },
   {
-    title: 'Daily Elegance',
-    description: 'Lightweight comfort sarees designed for everyday beauty.',
+    title: 'Kurta Sets',
+    image:
+      'https://res.cloudinary.com/dkq4kvwrr/image/upload/v1777536297/132fc2de-6bbe-44e9-b561-1dbade8d62a1.png',
+    offsetClass: 'md:mt-10',
   },
   {
-    title: 'Party Picks',
-    description: 'Statement drapes with modern motifs for special evenings.',
+    title: 'Co-ord Sets',
+    image:
+      'https://res.cloudinary.com/dkq4kvwrr/image/upload/v1777536442/5363fb0f-2ddd-432f-af7f-2e670b4de81f.png',
+    offsetClass: 'md:mt-0',
+  },
+  {
+    title: 'Tops',
+    image:
+      'https://res.cloudinary.com/dkq4kvwrr/image/upload/q_auto/f_auto/v1777536616/c1ee00bb-5be0-4741-8d31-79e01792111d.png',
+    offsetClass: 'md:mt-10',
+  },
+  {
+    title: 'Indo-Western',
+    image:
+      'https://res.cloudinary.com/dkq4kvwrr/image/upload/q_auto/f_auto/v1777536730/c686982d-7968-4518-98ec-62877ed4cc08.png',
+    offsetClass: 'md:mt-0',
   },
 ]
 
 function ShopByCategory() {
   return (
-    <section className="mx-auto w-full max-w-7xl px-4 py-14 md:px-8">
-      <h2 className="text-center font-serif text-3xl text-[#6f1c15] md:text-4xl">
-        Shop By Category
-      </h2>
-      <div className="mt-8 grid gap-5 md:grid-cols-3">
+    <section className="bg-[#f8f4ea] py-10 md:py-16">
+      <div className="mx-auto w-full max-w-7xl px-4 md:px-8">
+        <h2 className="text-center font-serif text-xl uppercase tracking-wide text-[#7b2d2a] md:text-3xl">
+          Shop By Category
+        </h2>
+        <div className="mx-auto mt-2 h-1 w-20 rounded-full bg-[#b69478]" />
+      </div>
+      <div className="mx-auto mt-6 grid w-full max-w-7xl grid-cols-2 gap-3 px-4 sm:grid-cols-2 md:mt-8 md:gap-5 lg:grid-cols-5 md:px-8">
         {categories.map((category) => (
-          <article
-            key={category.title}
-            className="rounded-2xl border border-[#edddd0] bg-white p-6 shadow-sm"
-          >
-            <h3 className="font-serif text-2xl text-[#7d241b]">{category.title}</h3>
-            <p className="mt-3 text-sm leading-6 text-[#7f5c50]">
-              {category.description}
-            </p>
-            <button
-              type="button"
-              className="mt-5 rounded-full border border-[#8f0019] px-4 py-2 text-xs font-semibold uppercase tracking-wide text-[#8f0019] transition hover:bg-[#8f0019] hover:text-white"
+          <article key={category.title} className={category.offsetClass}>
+            <Link
+              to={`/products?${new URLSearchParams({ category: category.title }).toString()}`}
+              className="group block"
             >
-              Explore
-            </button>
+              <div className="overflow-hidden rounded-[18px] border-2 border-[#6b2a26] bg-[#f8f4ea] p-2 transition-transform duration-200 group-hover:-translate-y-1">
+                <div className="overflow-hidden rounded-[14px] border border-white bg-white">
+                  <img
+                    src={category.image}
+                    alt={category.title}
+                    className="h-48 w-full object-cover md:h-72"
+                    loading="lazy"
+                  />
+                </div>
+              </div>
+              <h3 className="mt-1 text-center font-serif text-xs tracking-wide text-[#7b2d2a] md:mt-2 md:text-base">
+                {category.title}
+              </h3>
+            </Link>
           </article>
         ))}
       </div>

@@ -1,3 +1,5 @@
+import ShopByCategory from './ShopByCategory'
+
 const flowSections = [
   {
     title: 'Shop by Category',
@@ -52,10 +54,16 @@ const flowSections = [
 ]
 
 function HomepageFlow() {
+  const remainingSections = flowSections.filter(
+    (section) => section.title !== 'Shop by Category'
+  )
+
   return (
-    <section className="bg-[#faf7ec] py-14 md:py-16">
-      <div className="mx-auto w-full max-w-7xl space-y-10 px-4 md:px-8">
-        {flowSections.map((section) => (
+    <>
+      <ShopByCategory />
+      <section className="bg-[#faf7ec] py-14 md:py-16">
+        <div className="mx-auto w-full max-w-7xl space-y-10 px-4 md:px-8">
+          {remainingSections.map((section) => (
           <article
             key={section.title}
             className={`rounded-3xl bg-gradient-to-r ${section.tone} p-6 md:p-8`}
@@ -84,9 +92,10 @@ function HomepageFlow() {
               ))}
             </div>
           </article>
-        ))}
-      </div>
-    </section>
+          ))}
+        </div>
+      </section>
+    </>
   )
 }
 
