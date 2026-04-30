@@ -3,8 +3,16 @@ const brandLogo =
 
 function Footer() {
   return (
-    <footer className="bg-[#4e1e17] text-[#f8e7dc]">
-      <div className="mx-auto grid w-full max-w-7xl gap-8 px-4 py-12 md:grid-cols-3 md:px-8">
+    <footer
+      className="text-[#f8e7dc]"
+      style={{
+        backgroundImage:
+          "url('https://res.cloudinary.com/dkq4kvwrr/image/upload/q_auto/f_auto/v1777556450/8c86d11f-cace-4914-9e42-9d2f250b06c2.png')",
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
+    >
+      <div className="mx-auto grid w-full max-w-7xl gap-8 px-4 py-20 md:grid-cols-3 md:px-8 md:py-28">
         <div>
           <img
             src={brandLogo}
