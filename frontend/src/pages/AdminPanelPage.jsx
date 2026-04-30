@@ -593,78 +593,116 @@ function AdminPanelPage() {
 
             <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-4 py-4 md:px-6">
               <div className="grid gap-3 md:grid-cols-2">
-                <input
-                  placeholder="Product Name *"
-                  value={form.productName}
-                  onChange={(event) => handleChange('productName', event.target.value)}
-                  className="rounded-lg border border-[#ddc9b5] px-3 py-2 outline-none ring-[#8f0019]/30 focus:ring"
-                  required
-                />
-                <input
-                  placeholder="Brand"
-                  value={form.brand}
-                  onChange={(event) => handleChange('brand', event.target.value)}
-                  className="rounded-lg border border-[#ddc9b5] px-3 py-2 outline-none ring-[#8f0019]/30 focus:ring"
-                />
-                <select
-                  value={form.category}
-                  onChange={(event) => handleChange('category', event.target.value)}
-                  className="rounded-lg border border-[#ddc9b5] px-3 py-2 outline-none ring-[#8f0019]/30 focus:ring"
-                >
-                  {categoryOptions.map((item) => (
-                    <option key={item.category} value={item.category}>
-                      {item.category}
-                    </option>
-                  ))}
-                </select>
-                <select
-                  value={form.subCategory}
-                  onChange={(event) => handleChange('subCategory', event.target.value)}
-                  className="rounded-lg border border-[#ddc9b5] px-3 py-2 outline-none ring-[#8f0019]/30 focus:ring"
-                >
-                  {subCategoryOptions.map((subCategory) => (
-                    <option key={subCategory} value={subCategory}>
-                      {subCategory}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  placeholder="Fabric"
-                  value={form.fabric}
-                  onChange={(event) => handleChange('fabric', event.target.value)}
-                  className="rounded-lg border border-[#ddc9b5] px-3 py-2 outline-none ring-[#8f0019]/30 focus:ring"
-                />
-                <input
-                  placeholder="Occasion"
-                  value={form.occasion}
-                  onChange={(event) => handleChange('occasion', event.target.value)}
-                  className="rounded-lg border border-[#ddc9b5] px-3 py-2 outline-none ring-[#8f0019]/30 focus:ring"
-                />
-                <input
-                  type="number"
-                  min="0"
-                  placeholder="MRP"
-                  value={form.mrp}
-                  onChange={(event) => handleChange('mrp', event.target.value)}
-                  className="rounded-lg border border-[#ddc9b5] px-3 py-2 outline-none ring-[#8f0019]/30 focus:ring"
-                />
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  placeholder="Discount %"
-                  value={form.discountPercent}
-                  onChange={(event) => handleChange('discountPercent', event.target.value)}
-                  className="rounded-lg border border-[#ddc9b5] px-3 py-2 outline-none ring-[#8f0019]/30 focus:ring"
-                />
-                <input
-                  type="number"
-                  min="0"
-                  placeholder="Stock"
-                  value={form.stock}
-                  onChange={(event) => handleChange('stock', event.target.value)}
-                  className="rounded-lg border border-[#ddc9b5] px-3 py-2 outline-none ring-[#8f0019]/30 focus:ring"
-                />
+                <label className="block">
+                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[#5f1f17]">
+                    Product Name *
+                  </span>
+                  <input
+                    value={form.productName}
+                    onChange={(event) => handleChange('productName', event.target.value)}
+                    className="w-full rounded-lg border border-[#ddc9b5] px-3 py-2 outline-none ring-[#8f0019]/30 focus:ring"
+                    required
+                  />
+                </label>
+                <label className="block">
+                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[#5f1f17]">
+                    Brand
+                  </span>
+                  <input
+                    value={form.brand}
+                    onChange={(event) => handleChange('brand', event.target.value)}
+                    className="w-full rounded-lg border border-[#ddc9b5] px-3 py-2 outline-none ring-[#8f0019]/30 focus:ring"
+                  />
+                </label>
+                <label className="block">
+                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[#5f1f17]">
+                    Category
+                  </span>
+                  <select
+                    value={form.category}
+                    onChange={(event) => handleChange('category', event.target.value)}
+                    className="w-full rounded-lg border border-[#ddc9b5] px-3 py-2 outline-none ring-[#8f0019]/30 focus:ring"
+                  >
+                    {categoryOptions.map((item) => (
+                      <option key={item.category} value={item.category}>
+                        {item.category}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block">
+                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[#5f1f17]">
+                    Sub Category
+                  </span>
+                  <select
+                    value={form.subCategory}
+                    onChange={(event) => handleChange('subCategory', event.target.value)}
+                    className="w-full rounded-lg border border-[#ddc9b5] px-3 py-2 outline-none ring-[#8f0019]/30 focus:ring"
+                  >
+                    {subCategoryOptions.map((subCategory) => (
+                      <option key={subCategory} value={subCategory}>
+                        {subCategory}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block">
+                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[#5f1f17]">
+                    Fabric
+                  </span>
+                  <input
+                    value={form.fabric}
+                    onChange={(event) => handleChange('fabric', event.target.value)}
+                    className="w-full rounded-lg border border-[#ddc9b5] px-3 py-2 outline-none ring-[#8f0019]/30 focus:ring"
+                  />
+                </label>
+                <label className="block">
+                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[#5f1f17]">
+                    Occasion
+                  </span>
+                  <input
+                    value={form.occasion}
+                    onChange={(event) => handleChange('occasion', event.target.value)}
+                    className="w-full rounded-lg border border-[#ddc9b5] px-3 py-2 outline-none ring-[#8f0019]/30 focus:ring"
+                  />
+                </label>
+                <label className="block">
+                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[#5f1f17]">
+                    MRP
+                  </span>
+                  <input
+                    type="number"
+                    min="0"
+                    value={form.mrp}
+                    onChange={(event) => handleChange('mrp', event.target.value)}
+                    className="w-full rounded-lg border border-[#ddc9b5] px-3 py-2 outline-none ring-[#8f0019]/30 focus:ring"
+                  />
+                </label>
+                <label className="block">
+                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[#5f1f17]">
+                    Discount Percent
+                  </span>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={form.discountPercent}
+                    onChange={(event) => handleChange('discountPercent', event.target.value)}
+                    className="w-full rounded-lg border border-[#ddc9b5] px-3 py-2 outline-none ring-[#8f0019]/30 focus:ring"
+                  />
+                </label>
+                <label className="block">
+                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[#5f1f17]">
+                    Stock
+                  </span>
+                  <input
+                    type="number"
+                    min="0"
+                    value={form.stock}
+                    onChange={(event) => handleChange('stock', event.target.value)}
+                    className="w-full rounded-lg border border-[#ddc9b5] px-3 py-2 outline-none ring-[#8f0019]/30 focus:ring"
+                  />
+                </label>
                 <label className="flex items-center gap-2 rounded-lg border border-[#ddc9b5] px-3 py-2 text-sm text-[#5f1f17]">
                   <input
                     type="checkbox"

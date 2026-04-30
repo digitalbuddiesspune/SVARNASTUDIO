@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
 
@@ -8,6 +8,9 @@ function NewArrivals() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
   const [activeIndex, setActiveIndex] = useState(0)
+  const [isMobileView, setIsMobileView] = useState(false)
+  const [isTransitioning, setIsTransitioning] = useState(false)
+  const transitionTimeoutRef = useRef(null)
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -28,6 +31,21 @@ function NewArrivals() {
     fetchProducts()
   }, [])
 
+  useEffect(() => {
+    const mobileMediaQuery = window.matchMedia('(max-width: 767px)')
+
+    const handleViewportChange = () => {
+      setIsMobileView(mobileMediaQuery.matches)
+    }
+
+    handleViewportChange()
+    mobileMediaQuery.addEventListener('change', handleViewportChange)
+
+    return () => {
+      mobileMediaQuery.removeEventListener('change', handleViewportChange)
+    }
+  }, [])
+
   const newArrivalProducts = useMemo(() => {
     const flaggedProducts = products.filter((product) => product.isNewArrival)
     const sortedByDate = [...flaggedProducts].sort(
@@ -38,30 +56,58 @@ function NewArrivals() {
     return products
   }, [products])
 
-  const itemsPerSlide = 4
+  const itemsPerSlide = isMobileView ? 2 : 4
   const totalSlides = Math.ceil(newArrivalProducts.length / itemsPerSlide)
   const visibleProducts = newArrivalProducts.slice(
     activeIndex * itemsPerSlide,
     activeIndex * itemsPerSlide + itemsPerSlide
   )
 
+  useEffect(() => {
+    if (activeIndex >= totalSlides) {
+      setActiveIndex(0)
+    }
+  }, [activeIndex, totalSlides])
+
+  useEffect(() => {
+    return () => {
+      if (transitionTimeoutRef.current) {
+        clearTimeout(transitionTimeoutRef.current)
+      }
+    }
+  }, [])
+
+  const switchSlide = (nextIndex) => {
+    if (isTransitioning || totalSlides <= 1) return
+
+    setIsTransitioning(true)
+    transitionTimeoutRef.current = setTimeout(() => {
+      setActiveIndex(nextIndex)
+      setIsTransitioning(false)
+    }, 180)
+  }
+
   const goPrevious = () => {
-    setActiveIndex((prev) => (prev === 0 ? Math.max(totalSlides - 1, 0) : prev - 1))
+    const nextIndex = activeIndex === 0 ? Math.max(totalSlides - 1, 0) : activeIndex - 1
+    switchSlide(nextIndex)
   }
 
   const goNext = () => {
-    setActiveIndex((prev) => (prev + 1 >= totalSlides ? 0 : prev + 1))
+    const nextIndex = activeIndex + 1 >= totalSlides ? 0 : activeIndex + 1
+    switchSlide(nextIndex)
   }
 
   return (
     <article
-      className="relative overflow-hidden bg-cover bg-center py-6 text-[#f7e9dc] md:py-8"
+      className="relative overflow-hidden bg-no-repeat py-6 text-[#f7e9dc] md:py-8"
       style={{
         backgroundImage:
           "url('https://res.cloudinary.com/dkq4kvwrr/image/upload/q_auto/f_auto/v1777542474/ChatGPT_Image_Apr_30_2026_03_15_33_PM_pxxynj.png')",
+        backgroundPosition: 'top center',
+        backgroundSize: '100% 100%',
       }}
     >
-      <div className="relative px-3 pb-6 md:px-6 md:pb-8">
+      <div className="relative px-4 pb-7 md:px-8 md:pb-9">
         <h2 className="mt-3 text-center font-serif text-xl uppercase tracking-wider text-[#f2d9c5] md:mt-4 md:text-4xl">
           New Arrivals
         </h2>
@@ -92,17 +138,21 @@ function NewArrivals() {
               </>
             )}
 
-            <div className="mt-4 grid gap-3 pl-10 sm:grid-cols-2 md:pl-12 lg:grid-cols-4">
+            <div
+              className={`mt-4 grid grid-cols-2 gap-3 px-8 transition-opacity duration-300 md:px-10 lg:grid-cols-4 ${
+                isTransitioning ? 'opacity-0' : 'opacity-100'
+              }`}
+            >
               {visibleProducts.map((product) => (
                 <Link
                   key={product._id}
                   to={`/products/${product._id}`}
-                  className="group mx-auto w-full max-w-[250px] overflow-hidden rounded-lg bg-[#8a0023]/90 p-2"
+                  className="group w-full overflow-hidden rounded-none bg-[#8a0023]/90 p-2 md:rounded-lg"
                 >
                   <img
                     src={product.productImages?.[0] || 'https://via.placeholder.com/400x500?text=Product'}
                     alt={product.productName}
-                    className="h-60 w-full rounded-md object-cover md:h-[350px]"
+                    className="h-44 w-full rounded-none object-cover md:h-[350px] md:rounded-md"
                     loading="lazy"
                   />
                   <p className="mt-2 line-clamp-1 text-sm text-[#f8dfcd]">{product.productName}</p>
