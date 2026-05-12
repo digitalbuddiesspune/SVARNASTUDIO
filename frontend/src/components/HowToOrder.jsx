@@ -139,7 +139,7 @@ function HowToOrder() {
             loading="lazy"
           />
         </div>
-        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#fbf6ee] via-[#fbf6ee]/95 to-transparent px-5 pb-6 pt-16 text-left">
+        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#fbf6ee] via-[#fbf6ee]/95 to-transparent px-5 pb-3 pt-8 text-left">
           <p className="text-xs font-semibold uppercase tracking-[3px] text-[#8a6a55]">
             How to Order
           </p>
