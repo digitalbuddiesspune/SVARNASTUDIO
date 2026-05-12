@@ -1,3 +1,4 @@
+import ContactForm from '../components/ContactForm'
 import Footer from '../components/Footer'
 
 const PHONE_NUMBERS = ['+91 73504 95906', '+91 86686 56703']
@@ -194,6 +195,7 @@ function ContactUsPage() {
             </div>
           </div>
         </section>
+        <ContactForm />
       </main>
       <Footer />
     </>

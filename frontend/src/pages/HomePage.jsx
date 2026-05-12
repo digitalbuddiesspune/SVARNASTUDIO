@@ -1,3 +1,4 @@
+import ContactForm from '../components/ContactForm'
 import Footer from '../components/Footer'
 import HeroSection from '../components/HeroSection'
 import HomepageFlow from '../components/HomepageFlow'
@@ -9,6 +10,7 @@ function HomePage() {
       <HeroSection />
       <OfferStrip />
       <HomepageFlow />
+      <ContactForm />
       <Footer />
     </>
   )
