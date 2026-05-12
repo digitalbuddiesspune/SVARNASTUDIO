@@ -131,12 +131,14 @@ function HowToOrder() {
   return (
     <section className="text-[#3d2418]">
       <div className="relative bg-[#fbf6ee] md:hidden">
-        <img
-          src="https://res.cloudinary.com/dzd47mpdo/image/upload/v1778589335/ChatGPT_Image_May_12_2026_06_04_55_PM_1_hbujow.png"
-          alt="Order via WhatsApp"
-          className="block w-full"
-          loading="lazy"
-        />
+        <div className="aspect-[9/14] w-full overflow-hidden">
+          <img
+            src="https://res.cloudinary.com/dzd47mpdo/image/upload/v1778590274/ChatGPT_Image_May_12_2026_06_19_38_PM_1_jgesrz.png"
+            alt="Order via WhatsApp"
+            className="h-full w-full object-cover object-bottom"
+            loading="lazy"
+          />
+        </div>
         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#fbf6ee] via-[#fbf6ee]/95 to-transparent px-5 pb-6 pt-16 text-left">
           <p className="text-xs font-semibold uppercase tracking-[3px] text-[#8a6a55]">
             How to Order
