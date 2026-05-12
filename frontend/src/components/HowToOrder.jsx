@@ -124,9 +124,34 @@ const steps = [
   },
 ]
 
-function HowToOrder() {
-  const whatsappLink = 'https://wa.me/917350495906'
+function HowToOrder({ product = null }) {
+  const phoneNumber = '917350495906'
   const instagramLink = 'https://instagram.com/svarnastudio'
+
+  const buildWhatsappLink = () => {
+    if (!product) {
+      return `https://wa.me/${phoneNumber}`
+    }
+    const productUrl =
+      typeof window !== 'undefined' ? window.location.href : ''
+    const price =
+      product?.price?.discountedPrice ?? product?.price?.mrp ?? null
+    const lines = [
+      'Hi! I would like to place an order for this product:',
+      '',
+      `*${product.productName || 'Product'}*`,
+      product.category ? `Category: ${product.category}` : null,
+      product.subCategory ? `Sub-category: ${product.subCategory}` : null,
+      price ? `Price: Rs. ${price}` : null,
+      productUrl ? `Link: ${productUrl}` : null,
+      '',
+      'Please share the availability and next steps. Thank you!',
+    ].filter(Boolean)
+    const message = lines.join('\n')
+    return `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`
+  }
+
+  const whatsappLink = buildWhatsappLink()
 
   return (
     <section className="text-[#3d2418]">

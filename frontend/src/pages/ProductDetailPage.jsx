@@ -1,4 +1,5 @@
 import Footer from '../components/Footer'
+import HowToOrder from '../components/HowToOrder'
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 
@@ -268,6 +269,9 @@ function ProductDetailPage() {
             </article>
           </div>
         </section>
+        <div className="mt-10 w-full md:mt-16">
+          <HowToOrder product={product} />
+        </div>
       </main>
       <Footer />
     </>
