@@ -125,13 +125,39 @@ const steps = [
 ]
 
 function HowToOrder() {
-  const whatsappLink = 'https://wa.me/919876543210'
+  const whatsappLink = 'https://wa.me/917350495906'
   const instagramLink = 'https://instagram.com/svarnastudio'
 
   return (
     <section className="text-[#3d2418]">
+      <div className="relative bg-[#fbf6ee] md:hidden">
+        <img
+          src="https://res.cloudinary.com/dzd47mpdo/image/upload/v1778589335/ChatGPT_Image_May_12_2026_06_04_55_PM_1_hbujow.png"
+          alt="Order via WhatsApp"
+          className="block w-full"
+          loading="lazy"
+        />
+        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#fbf6ee] via-[#fbf6ee]/95 to-transparent px-5 pb-6 pt-16 text-left">
+          <p className="text-xs font-semibold uppercase tracking-[3px] text-[#8a6a55]">
+            How to Order
+          </p>
+          <h2 className="mt-2 font-serif text-3xl leading-tight text-[#2c1810]">
+            Ordering is simple!
+          </h2>
+          <span className="mt-3 block h-[2px] w-14 bg-[#c4a261]" />
+          <p className="mt-4 text-xs leading-6 text-[#5b4636]">
+            We are not accepting online payments right now. You can place your order
+            easily through WhatsApp or Instagram. Our team will assist you personally.
+          </p>
+          <p className="mt-4 font-serif text-lg italic text-[#7a5b4f]">
+            We&apos;re here to help you!{' '}
+            <span className="text-[#c4a261]">♡</span>
+          </p>
+        </div>
+      </div>
+
       <div
-        className="relative w-full bg-[#fbf6ee]"
+        className="relative hidden w-full bg-[#fbf6ee] md:block"
         style={{
           backgroundImage:
             "url('https://res.cloudinary.com/dzd47mpdo/image/upload/v1778587971/ChatGPT_Image_May_12_2026_05_40_24_PM_1_b5g710.png')",
@@ -140,16 +166,16 @@ function HowToOrder() {
           backgroundRepeat: 'no-repeat',
         }}
       >
-        <div className="mx-auto grid w-full max-w-7xl items-center gap-10 px-4 pt-12 pb-12 md:grid-cols-2 md:gap-12 md:px-8 md:pt-20 md:pb-24">
+        <div className="mx-auto grid w-full max-w-7xl items-center gap-12 px-8 pb-24 pt-20 md:grid-cols-2">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[3px] text-[#8a6a55]">
               How to Order
             </p>
-            <h2 className="mt-2 font-serif text-4xl leading-tight text-[#2c1810] md:text-5xl">
+            <h2 className="mt-2 font-serif text-5xl leading-tight text-[#2c1810]">
               Ordering is simple!
             </h2>
             <span className="mt-3 block h-[2px] w-16 bg-[#c4a261]" />
-            <p className="mt-5 max-w-md text-sm leading-7 text-[#5b4636] md:text-[15px]">
+            <p className="mt-5 max-w-md text-[15px] leading-7 text-[#5b4636]">
               We are not accepting online payments right now. You can place your order
               easily through WhatsApp or Instagram. Our team will assist you personally.
             </p>
@@ -159,7 +185,7 @@ function HowToOrder() {
             </p>
           </div>
 
-          <div className="hidden md:block" aria-hidden="true" />
+          <div aria-hidden="true" />
         </div>
       </div>
 
