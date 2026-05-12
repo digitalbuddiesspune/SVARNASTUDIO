@@ -1,6 +1,8 @@
 import Navbar from './components/Navbar'
+import AboutUsPage from './pages/AboutUsPage'
 import AdminLoginPage from './pages/AdminLoginPage'
 import AdminPanelPage from './pages/AdminPanelPage'
+import ContactUsPage from './pages/ContactUsPage'
 import HomePage from './pages/HomePage'
 import ProductDetailPage from './pages/ProductDetailPage'
 import ProductsPage from './pages/ProductsPage'
@@ -22,6 +24,8 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/products" element={<ProductsPage />} />
         <Route path="/products/:id" element={<ProductDetailPage />} />
+        <Route path="/about" element={<AboutUsPage />} />
+        <Route path="/contact" element={<ContactUsPage />} />
         <Route path="/admin" element={<AdminLoginPage />} />
         <Route path="/admin/panel" element={<AdminPanelPage />} />
       </Routes>

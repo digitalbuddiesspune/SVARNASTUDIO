@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom'
+
 const brandLogo =
   'https://res.cloudinary.com/dkq4kvwrr/image/upload/v1777461585/Untitled_design_3_mhica6.png'
 
@@ -29,10 +31,26 @@ function Footer() {
             Quick Links
           </h4>
           <ul className="mt-3 space-y-2 text-sm">
-            <li>Home</li>
-            <li>Shop</li>
-            <li>About Us</li>
-            <li>Contact</li>
+            <li>
+              <Link to="/" className="transition hover:text-white">
+                Home
+              </Link>
+            </li>
+            <li>
+              <Link to="/products" className="transition hover:text-white">
+                Shop
+              </Link>
+            </li>
+            <li>
+              <Link to="/about" className="transition hover:text-white">
+                About Us
+              </Link>
+            </li>
+            <li>
+              <Link to="/contact" className="transition hover:text-white">
+                Contact
+              </Link>
+            </li>
           </ul>
         </div>
 
@@ -40,9 +58,28 @@ function Footer() {
           <h4 className="text-sm font-semibold uppercase tracking-wider text-[#ffd8c8]">
             Contact
           </h4>
-          <p className="mt-3 text-sm text-[#f4d3c5]">support@nehasaree.com</p>
-          <p className="mt-1 text-sm text-[#f4d3c5]">+91 98765 43210</p>
-          <p className="mt-1 text-sm text-[#f4d3c5]">Mon - Sat, 10 AM - 7 PM</p>
+          <p className="mt-3 text-sm text-[#f4d3c5]">
+            <a
+              href="mailto:contact@svarnastudio.in"
+              className="transition hover:text-white"
+            >
+              contact@svarnastudio.in
+            </a>
+          </p>
+          <p className="mt-1 text-sm text-[#f4d3c5]">
+            <a href="tel:+917350495906" className="transition hover:text-white">
+              +91 73504 95906
+            </a>
+            {' '}|{' '}
+            <a href="tel:+918668656703" className="transition hover:text-white">
+              +91 86686 56703
+            </a>
+          </p>
+          <p className="mt-1 text-sm text-[#f4d3c5]">
+            Ganesha Residency, Bhole Baba Nagar,
+            <br />
+            Uday Nagar, Nagpur
+          </p>
         </div>
       </div>
       <div className="border-t border-[#7d4436] px-4 py-4 text-center text-xs text-[#f1c8b7]">

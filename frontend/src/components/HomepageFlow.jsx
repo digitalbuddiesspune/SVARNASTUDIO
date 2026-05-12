@@ -3,6 +3,7 @@ import ShopByFabric from './ShopByFabric'
 import ShopByOccasion from './ShopByOccasion'
 import TrendingNow from './TrendingNow'
 import NewArrivals from './NewArrivals'
+import HowToOrder from './HowToOrder'
 
 function HomepageFlow() {
   return (
@@ -18,6 +19,9 @@ function HomepageFlow() {
         </div>
         <div className="mt-0 w-full">
           <TrendingNow />
+        </div>
+        <div className="mt-10 w-full md:mt-16">
+          <HowToOrder />
         </div>
       </section>
     </>

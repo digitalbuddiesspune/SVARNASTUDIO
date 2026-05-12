@@ -3,8 +3,8 @@ import { Link, useLocation } from 'react-router-dom'
 
 const navLinks = [
   { label: 'Products', path: '/products' },
-  { label: 'About', path: null },
-  { label: 'Contact', path: null },
+  { label: 'About', path: '/about' },
+  { label: 'Contact', path: '/contact' },
 ]
 const brandLogo =
   'https://res.cloudinary.com/dkq4kvwrr/image/upload/v1777467131/suvarnaStudiologo_cojcd7.png'
