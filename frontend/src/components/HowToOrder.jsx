@@ -125,7 +125,7 @@ const steps = [
 ]
 
 function HowToOrder({ product = null }) {
-  const phoneNumber = '917350495906'
+  const phoneNumber = '8788626281'
   const instagramLink = 'https://instagram.com/svarnastudio'
 
   const buildWhatsappLink = () => {
