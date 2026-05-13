@@ -21,7 +21,7 @@ function ContactForm({
     setForm((previous) => ({ ...previous, [name]: value }))
   }
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
 
     if (!form.name.trim() || !form.email.trim() || !form.message.trim()) {
@@ -32,12 +32,63 @@ function ContactForm({
       return
     }
 
-    setStatus({
-      state: 'success',
-      message: 'Thank you! Your message has been received. We will get back to you soon.',
-    })
-    setForm(INITIAL_FORM)
+    const accessKey = import.meta.env.VITE_WEB3FORMS_ACCESS_KEY
+
+    if (!accessKey) {
+      setStatus({
+        state: 'error',
+        message:
+          'Contact form is not configured yet. Please try again later or reach us directly.',
+      })
+      return
+    }
+
+    setStatus({ state: 'loading', message: 'Sending your message...' })
+
+    try {
+      const response = await fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({
+          access_key: accessKey,
+          name: form.name,
+          email: form.email,
+          phone: form.phone,
+          subject: form.subject || 'New enquiry from Svarna Studio',
+          message: form.message,
+          from_name: 'Svarna Studio Contact Form',
+        }),
+      })
+
+      const result = await response.json()
+
+      if (response.ok && result.success) {
+        setStatus({
+          state: 'success',
+          message:
+            'Thank you! Your message has been received. We will get back to you soon.',
+        })
+        setForm(INITIAL_FORM)
+      } else {
+        setStatus({
+          state: 'error',
+          message:
+            result.message || 'Something went wrong. Please try again.',
+        })
+      }
+    } catch (submitError) {
+      setStatus({
+        state: 'error',
+        message:
+          'Network error. Please check your connection and try again.',
+      })
+    }
   }
+
+  const isSubmitting = status.state === 'loading'
 
   return (
     <section className="bg-[#faf6ee] py-12 md:py-16">
@@ -152,9 +203,10 @@ function ContactForm({
             </p>
             <button
               type="submit"
-              className="inline-flex items-center gap-2 rounded-full bg-[#8f0019] px-6 py-2.5 text-xs font-semibold uppercase tracking-wider text-white shadow-md transition hover:bg-[#730014]"
+              disabled={isSubmitting}
+              className="inline-flex items-center gap-2 rounded-full bg-[#8f0019] px-6 py-2.5 text-xs font-semibold uppercase tracking-wider text-white shadow-md transition hover:bg-[#730014] disabled:cursor-not-allowed disabled:opacity-70"
             >
-              Send Message
+              {isSubmitting ? 'Sending...' : 'Send Message'}
               <span aria-hidden="true">→</span>
             </button>
           </div>
