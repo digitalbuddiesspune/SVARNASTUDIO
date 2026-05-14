@@ -1,4 +1,5 @@
 import InvoiceGenerator from '../components/InvoiceGenerator'
+import AllInvoicesList from '../components/AllInvoicesList'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
@@ -277,6 +278,7 @@ function AdminPanelPage() {
               { id: 'delete', label: 'Delete Product' },
               { id: 'all', label: 'All Products' },
               { id: 'invoice', label: 'Invoice Generate' },
+              { id: 'invoices-all', label: 'All Invoices' },
             ].map((item) => (
               <button
                 key={item.id}
@@ -304,6 +306,8 @@ function AdminPanelPage() {
 
         <div className="space-y-5 print:max-w-none">
           {activeSection === 'invoice' && <InvoiceGenerator />}
+
+          {activeSection === 'invoices-all' && <AllInvoicesList />}
 
           {activeSection === 'dashboard' && (
             <section className="rounded-2xl border border-[#eadbcb] bg-white p-4 shadow-sm md:p-6">

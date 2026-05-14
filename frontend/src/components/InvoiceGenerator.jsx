@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
 import html2canvas from 'html2canvas'
 import { jsPDF } from 'jspdf'
+import { appendArchivedInvoice } from '../utils/svarnaInvoiceArchive'
 
 /** Default logo: file `frontend/public/invoice-logo.png` (URL from site root). */
 const DEFAULT_INVOICE_LOGO = `${import.meta.env.BASE_URL}invoice-logo.png`
@@ -137,7 +138,7 @@ function InvoiceGenerator() {
       ? formatInvoiceDateTime(new Date(draft.orderDate))
       : '—'
 
-    setGenerated({
+    const snapshot = {
       companyName: DEFAULT_COMPANY_NAME,
       logoDataUrl: draft.logoDataUrl || DEFAULT_INVOICE_LOGO,
       companyPhones: [...COMPANY_PHONES],
@@ -161,7 +162,10 @@ function InvoiceGenerator() {
         mrp: Number(r.mrp) || 0,
         discountedPrice: Number(r.discountedPrice) || 0,
       })),
-    })
+    }
+
+    setGenerated(snapshot)
+    appendArchivedInvoice(snapshot)
     setTimeout(() => {
       invoiceRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }, 100)
@@ -189,6 +193,8 @@ function InvoiceGenerator() {
       const canvas = await html2canvas(node, {
         scale: 2,
         useCORS: true,
+        allowTaint: false,
+        foreignObjectRendering: false,
         logging: false,
         backgroundColor: '#ffffff',
       })
@@ -512,16 +518,16 @@ function InvoiceGenerator() {
           className="mt-4 overflow-hidden rounded-2xl border border-[#eadbcb] bg-white px-8 shadow-lg sm:px-12 md:px-16 lg:px-20 print:px-12"
         >
           {/* Top: centered logo, contact line below */}
-          <div className="border-b border-[#f0dfd4] bg-white px-0 pt-1.5 pb-5 font-sans md:pt-2 md:pb-6">
+          <div className="border-b border-[#f0dfd4] bg-white px-0 pt-1.5 pb-8 font-sans md:pt-2 md:pb-10">
             <div className="flex flex-col items-center gap-3">
               <img
                 src={generated.logoDataUrl}
                 alt="Company logo"
-                crossOrigin="anonymous"
                 className="mx-auto block h-24 w-auto max-w-[min(100%,320px)] object-contain object-center sm:h-28 md:h-32 lg:h-36"
               />
-              <p className="max-w-4xl px-2 text-center text-xs leading-snug text-neutral-800 sm:px-3 sm:text-sm md:px-4">
-                <span className="inline font-medium whitespace-normal">
+              <div className="flex w-full max-w-full justify-center overflow-x-auto pb-1">
+                <p className="whitespace-nowrap px-2 text-center text-xs leading-snug text-neutral-800 sm:px-3 sm:text-sm md:px-4">
+                  <span className="inline font-medium">
                   {generated.companyPhones.map((phone, i) => (
                     <span key={phone}>
                       {i > 0 ? (
@@ -560,12 +566,13 @@ function InvoiceGenerator() {
                     .filter(Boolean)
                     .join(' ')}
                 </span>
-              </p>
+                </p>
+              </div>
             </div>
           </div>
 
           {/* INVOICE & ORDER + BILL TO — flat (no card box) */}
-          <div className="border-b border-neutral-200 px-0 pb-2 pt-5 font-sans md:pb-3 md:pt-6">
+          <div className="border-b border-neutral-200 px-0 pb-2 pt-8 font-sans md:pb-3 md:pt-10">
             <div className="mx-auto grid max-w-5xl gap-2 sm:grid-cols-2 sm:items-start sm:gap-4">
               <div className="min-w-0 px-1 sm:px-2">
                 <h3 className="mb-1.5 text-left text-sm font-bold uppercase tracking-wide text-slate-800">
