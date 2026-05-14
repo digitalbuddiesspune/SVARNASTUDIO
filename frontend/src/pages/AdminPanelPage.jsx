@@ -82,6 +82,7 @@ function AdminPanelPage() {
   const [activeSection, setActiveSection] = useState('dashboard')
   const [status, setStatus] = useState('')
   const [loading, setLoading] = useState(true)
+  const [invoiceOpenRequest, setInvoiceOpenRequest] = useState(null)
 
   const subCategoryOptions = useMemo(() => {
     return categoryOptions.find((item) => item.category === form.category)?.subCategories || []
@@ -283,7 +284,10 @@ function AdminPanelPage() {
               <button
                 key={item.id}
                 type="button"
-                onClick={() => setActiveSection(item.id)}
+                onClick={() => {
+                  if (item.id === 'invoice') setInvoiceOpenRequest(null)
+                  setActiveSection(item.id)
+                }}
                 className={`w-full rounded-lg px-3 py-2 text-left text-sm font-semibold transition ${
                   activeSection === item.id
                     ? 'bg-[#8f0019] text-white'
@@ -305,9 +309,22 @@ function AdminPanelPage() {
         </aside>
 
         <div className="space-y-5 print:max-w-none">
-          {activeSection === 'invoice' && <InvoiceGenerator />}
+          {activeSection === 'invoice' && (
+            <InvoiceGenerator openInvoiceRequest={invoiceOpenRequest} />
+          )}
 
-          {activeSection === 'invoices-all' && <AllInvoicesList />}
+          {activeSection === 'invoices-all' && (
+            <AllInvoicesList
+              onViewInvoice={(invoice) => {
+                const inv =
+                  typeof structuredClone !== 'undefined'
+                    ? structuredClone(invoice)
+                    : JSON.parse(JSON.stringify(invoice))
+                setInvoiceOpenRequest({ invoice: inv, token: Date.now() })
+                setActiveSection('invoice')
+              }}
+            />
+          )}
 
           {activeSection === 'dashboard' && (
             <section className="rounded-2xl border border-[#eadbcb] bg-white p-4 shadow-sm md:p-6">

@@ -1,6 +1,7 @@
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import html2canvas from 'html2canvas'
 import { jsPDF } from 'jspdf'
+import QRCode from 'qrcode'
 import { appendArchivedInvoice } from '../utils/svarnaInvoiceArchive'
 
 /** Default logo: file `frontend/public/invoice-logo.png` (URL from site root). */
@@ -43,8 +44,8 @@ const createEmptyRow = () => ({
   id: createRowId(),
   name: '',
   category: '',
-  mrp: 0,
-  discountedPrice: 0,
+  mrp: '',
+  discountedPrice: '',
 })
 
 function formatInvoiceDateTime(d) {
@@ -70,6 +71,7 @@ const initialDraft = () => ({
   orderStatus: '',
   paymentStatus: '',
   paymentMode: '',
+  upiId: '',
   rows: [createEmptyRow()],
 })
 
@@ -78,12 +80,82 @@ function formatCurrency(value) {
   return n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
-function InvoiceGenerator() {
+/** Empty / invalid → null (no default 0 in stored invoice). */
+function parseOptionalAmount(raw) {
+  if (raw === null || raw === undefined) return null
+  const s = String(raw).trim()
+  if (s === '') return null
+  const n = Number(s)
+  return Number.isFinite(n) ? n : null
+}
+
+/** Table / draft: show dash when no amount. */
+function formatRupeeCell(raw) {
+  const n = parseOptionalAmount(raw)
+  if (n === null) return '—'
+  return `₹${formatCurrency(n)}`
+}
+
+function InvoiceGenerator({ openInvoiceRequest = null }) {
   const invoiceRef = useRef(null)
   const [draft, setDraft] = useState(initialDraft)
   const [generated, setGenerated] = useState(null)
   const [formError, setFormError] = useState('')
   const [isPdfLoading, setIsPdfLoading] = useState(false)
+  const [upiQrDataUrl, setUpiQrDataUrl] = useState('')
+
+  useEffect(() => {
+    if (!openInvoiceRequest?.invoice) return
+    const inv =
+      typeof structuredClone !== 'undefined'
+        ? structuredClone(openInvoiceRequest.invoice)
+        : JSON.parse(JSON.stringify(openInvoiceRequest.invoice))
+    setGenerated(inv)
+    setTimeout(() => {
+      invoiceRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 150)
+  }, [openInvoiceRequest?.token])
+
+  const subtotal = useMemo(() => {
+    if (!generated) return 0
+    return generated.rows.reduce(
+      (sum, row) => sum + (parseOptionalAmount(row.discountedPrice) ?? 0),
+      0,
+    )
+  }, [generated])
+
+  const gst = useMemo(() => subtotal * 0.18, [subtotal])
+  const grandTotal = useMemo(() => subtotal + gst, [subtotal, gst])
+
+  /** NPCI-style UPI intent; amount = Grand Total (incl. GST). */
+  useEffect(() => {
+    let cancelled = false
+    async function buildUpiQr() {
+      if (!generated?.upiId?.trim()) {
+        setUpiQrDataUrl('')
+        return
+      }
+      const pa = generated.upiId.trim()
+      const pn = String(generated.companyName || DEFAULT_COMPANY_NAME).slice(0, 50)
+      const tn = `Invoice ${generated.invoiceNumber || ''}`.slice(0, 80)
+      const uri = `upi://pay?pa=${encodeURIComponent(pa)}&pn=${encodeURIComponent(pn)}&am=${grandTotal.toFixed(2)}&cu=INR&tn=${encodeURIComponent(tn)}`
+      try {
+        const dataUrl = await QRCode.toDataURL(uri, {
+          width: 220,
+          margin: 2,
+          color: { dark: '#1f2937', light: '#ffffff' },
+        })
+        if (!cancelled) setUpiQrDataUrl(dataUrl)
+      } catch (e) {
+        console.error('UPI QR', e)
+        if (!cancelled) setUpiQrDataUrl('')
+      }
+    }
+    buildUpiQr()
+    return () => {
+      cancelled = true
+    }
+  }, [generated, grandTotal])
 
   const setDraftField = useCallback((key, value) => {
     setDraft((prev) => ({ ...prev, [key]: value }))
@@ -92,21 +164,7 @@ function InvoiceGenerator() {
   const updateDraftRow = useCallback((id, field, value) => {
     setDraft((prev) => ({
       ...prev,
-      rows: prev.rows.map((row) =>
-        row.id === id
-          ? {
-              ...row,
-              [field]:
-                field === 'name' || field === 'category'
-                  ? value
-                  : field === 'mrp' || field === 'discountedPrice'
-                    ? value === ''
-                      ? ''
-                      : Number(value)
-                    : value,
-            }
-          : row,
-      ),
+      rows: prev.rows.map((row) => (row.id === id ? { ...row, [field]: value } : row)),
     }))
   }, [])
 
@@ -155,12 +213,13 @@ function InvoiceGenerator() {
       orderStatus: draft.orderStatus.trim() || '—',
       paymentStatus: draft.paymentStatus.trim() || '—',
       paymentMode: draft.paymentMode.trim() || '—',
+      upiId: draft.upiId.trim(),
       rows: productRows.map((r) => ({
         id: r.id,
         name: String(r.name).trim(),
         category: String(r.category || '').trim(),
-        mrp: Number(r.mrp) || 0,
-        discountedPrice: Number(r.discountedPrice) || 0,
+        mrp: parseOptionalAmount(r.mrp),
+        discountedPrice: parseOptionalAmount(r.discountedPrice),
       })),
     }
 
@@ -170,15 +229,6 @@ function InvoiceGenerator() {
       invoiceRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }, 100)
   }
-
-  /** Row total = discounted price only (no quantity). */
-  const subtotal = useMemo(() => {
-    if (!generated) return 0
-    return generated.rows.reduce((sum, row) => sum + (Number(row.discountedPrice) || 0), 0)
-  }, [generated])
-
-  const gst = useMemo(() => subtotal * 0.18, [subtotal])
-  const grandTotal = useMemo(() => subtotal + gst, [subtotal, gst])
 
   const handlePrint = () => {
     if (!generated) return
@@ -311,6 +361,21 @@ function InvoiceGenerator() {
                     placeholder="e.g. UPI / Cash / Card"
                   />
                 </div>
+                <div className="sm:col-span-2">
+                  <label className={formLabelClass}>UPI ID (भरण्यासाठी QR)</label>
+                  <input
+                    type="text"
+                    value={draft.upiId}
+                    onChange={(e) => setDraftField('upiId', e.target.value)}
+                    className={formInputClass}
+                    placeholder="e.g. merchant@paytm"
+                    autoComplete="off"
+                    spellCheck={false}
+                  />
+                  <p className="mt-1.5 text-xs text-[#7a5b4f]">
+                    Grand Total रकमेचा UPI QR इनव्हॉइसवर दिसेल / QR encodes the exact Grand Total (incl. 18% GST).
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -390,7 +455,7 @@ function InvoiceGenerator() {
                   </thead>
                   <tbody>
                     {draft.rows.map((row, index) => {
-                      const lineTotal = Number(row.discountedPrice) || 0
+                      const lineAmount = parseOptionalAmount(row.discountedPrice)
                       return (
                         <tr key={row.id} className="border-t border-[#f0dfd4]">
                           <td className="px-3 py-2 align-top text-[#7a5b4f]">{index + 1}</td>
@@ -414,28 +479,30 @@ function InvoiceGenerator() {
                           </td>
                           <td className="px-3 py-2 align-top">
                             <input
-                              type="number"
-                              min="0"
-                              step="0.01"
+                              type="text"
+                              inputMode="decimal"
+                              autoComplete="off"
                               value={row.mrp}
                               onChange={(e) => updateDraftRow(row.id, 'mrp', e.target.value)}
                               className={`${formInputClass} w-28`}
+                              placeholder="0"
                             />
                           </td>
                           <td className="px-3 py-2 align-top">
                             <input
-                              type="number"
-                              min="0"
-                              step="0.01"
+                              type="text"
+                              inputMode="decimal"
+                              autoComplete="off"
                               value={row.discountedPrice}
                               onChange={(e) =>
                                 updateDraftRow(row.id, 'discountedPrice', e.target.value)
                               }
                               className={`${formInputClass} w-28`}
+                              placeholder="0"
                             />
                           </td>
                           <td className="px-3 py-2 align-middle font-mono font-semibold text-[#8f0019]">
-                            ₹{formatCurrency(lineTotal)}
+                            {lineAmount === null ? '—' : `₹${formatCurrency(lineAmount)}`}
                           </td>
                           <td className="px-3 py-2 align-middle text-center">
                             <button
@@ -525,9 +592,9 @@ function InvoiceGenerator() {
                 alt="Company logo"
                 className="mx-auto block h-24 w-auto max-w-[min(100%,320px)] object-contain object-center sm:h-28 md:h-32 lg:h-36"
               />
-              <div className="flex w-full max-w-full justify-center overflow-x-auto pb-1">
-                <p className="whitespace-nowrap px-2 text-center text-xs leading-snug text-neutral-800 sm:px-3 sm:text-sm md:px-4">
-                  <span className="inline font-medium">
+              <div className="flex w-full max-w-full justify-center pb-1">
+                <p className="max-w-full px-2 text-center text-xs leading-snug text-neutral-800 text-balance sm:px-3 sm:text-sm md:px-4">
+                  <span className="font-medium">
                   {generated.companyPhones.map((phone, i) => (
                     <span key={phone}>
                       {i > 0 ? (
@@ -559,12 +626,34 @@ function InvoiceGenerator() {
                   {' '}
                   |{' '}
                 </span>
-                <span className="inline text-neutral-800">
-                  {String(generated.companyAddress || '')
-                    .split('\n')
-                    .map((l) => l.trim())
-                    .filter(Boolean)
-                    .join(' ')}
+                <span className="inline-flex items-start gap-1 text-neutral-800">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.75}
+                    stroke="currentColor"
+                    className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#8f0019] sm:h-4 sm:w-4"
+                    aria-hidden
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"
+                    />
+                  </svg>
+                  <span>
+                    {String(generated.companyAddress || '')
+                      .split('\n')
+                      .map((l) => l.trim())
+                      .filter(Boolean)
+                      .join(' ')}
+                  </span>
                 </span>
                 </p>
               </div>
@@ -615,10 +704,16 @@ function InvoiceGenerator() {
                       {generated.paymentStatus || '—'}
                     </span>
                   </div>
-                  <div className="flex items-baseline justify-between gap-1.5 py-1 last:pb-0">
+                  <div className="flex items-baseline justify-between gap-1.5 border-b border-neutral-100 py-1">
                     <span className="shrink-0 text-slate-600">Payment Mode</span>
                     <span className="min-w-0 max-w-[58%] text-right font-medium text-slate-900">
                       {generated.paymentMode || '—'}
+                    </span>
+                  </div>
+                  <div className="flex items-baseline justify-between gap-1.5 py-1 last:pb-0">
+                    <span className="shrink-0 text-slate-600">UPI ID</span>
+                    <span className="min-w-0 max-w-[58%] break-all text-right font-medium text-slate-900">
+                      {generated.upiId?.trim() ? generated.upiId.trim() : '—'}
                     </span>
                   </div>
                 </div>
@@ -686,16 +781,17 @@ function InvoiceGenerator() {
                 </thead>
                 <tbody>
                   {generated.rows.map((row, index) => {
-                    const total = Number(row.discountedPrice) || 0
                     return (
                       <tr key={row.id} className="border-b border-[#f0dfd4] bg-white">
                         <td className="px-3 py-3 text-[#7a5b4f]">{index + 1}</td>
                         <td className="px-3 py-3 font-medium text-[#5f1f17]">{row.name}</td>
                         <td className="px-3 py-3 text-[#6e4f43]">{row.category || '—'}</td>
-                        <td className="px-3 py-3 font-mono text-[#6e4f43]">₹{formatCurrency(row.mrp)}</td>
-                        <td className="px-3 py-3 font-mono text-[#6e4f43]">₹{formatCurrency(row.discountedPrice)}</td>
+                        <td className="px-3 py-3 font-mono text-[#6e4f43]">{formatRupeeCell(row.mrp)}</td>
+                        <td className="px-3 py-3 font-mono text-[#6e4f43]">
+                          {formatRupeeCell(row.discountedPrice)}
+                        </td>
                         <td className="px-3 py-3 font-mono font-semibold text-[#5f1f17]">
-                          ₹{formatCurrency(total)}
+                          {formatRupeeCell(row.discountedPrice)}
                         </td>
                       </tr>
                     )
@@ -705,21 +801,50 @@ function InvoiceGenerator() {
             </div>
           </div>
 
-          {/* Calculations */}
+          {/* Calculations — QR plain (no card); totals only in bordered card */}
           <div className="border-t border-[#f0dfd4] bg-white px-0 py-6 md:py-8">
-            <div className="mx-auto max-w-md space-y-3 rounded-xl border border-[#eadbcb] bg-white p-5 shadow-sm">
-              <div className="flex justify-between text-sm text-[#6e4f43]">
-                <span>Subtotal</span>
-                <span className="font-mono font-semibold text-[#5f1f17]">₹{formatCurrency(subtotal)}</span>
-              </div>
-              <div className="flex justify-between text-sm text-[#6e4f43]">
-                <span>GST (18%)</span>
-                <span className="font-mono font-semibold text-[#5f1f17]">₹{formatCurrency(gst)}</span>
-              </div>
-              <div className="border-t border-[#eadbcb] pt-3">
-                <div className="flex justify-between text-base font-bold text-[#8f0019]">
-                  <span>Grand Total</span>
-                  <span className="font-mono text-lg text-[#8f0019]">₹{formatCurrency(grandTotal)}</span>
+            <div
+              className={`mx-auto flex gap-6 ${
+                upiQrDataUrl
+                  ? 'max-w-3xl flex-col sm:flex-row sm:items-start sm:justify-between'
+                  : 'max-w-md flex-col'
+              }`}
+            >
+              {upiQrDataUrl ? (
+                <div className="flex shrink-0 flex-col items-center sm:items-start">
+                  <p className="mb-2 text-xs font-medium text-[#6e4f43]">UPI — Pay exact amount</p>
+                  <img
+                    src={upiQrDataUrl}
+                    alt="UPI payment QR for Grand Total"
+                    className="h-[220px] w-[220px]"
+                    width={220}
+                    height={220}
+                  />
+                  <p className="mt-2 max-w-[220px] break-all text-center font-mono text-xs text-[#5f1f17] sm:text-left">
+                    ₹{formatCurrency(grandTotal)} · {generated.upiId?.trim()}
+                  </p>
+                </div>
+              ) : null}
+              <div
+                className={`rounded-xl border border-[#eadbcb] bg-white p-5 shadow-sm ${
+                  upiQrDataUrl ? 'w-full min-w-0 sm:ml-auto sm:w-[min(100%,280px)] sm:shrink-0' : 'w-full'
+                }`}
+              >
+                <div className="space-y-3">
+                  <div className="flex justify-between gap-4 text-sm text-[#6e4f43]">
+                    <span>Subtotal</span>
+                    <span className="font-mono font-semibold text-[#5f1f17]">₹{formatCurrency(subtotal)}</span>
+                  </div>
+                  <div className="flex justify-between gap-4 text-sm text-[#6e4f43]">
+                    <span>GST (18%)</span>
+                    <span className="font-mono font-semibold text-[#5f1f17]">₹{formatCurrency(gst)}</span>
+                  </div>
+                  <div className="border-t border-[#eadbcb] pt-3">
+                    <div className="flex justify-between gap-4 text-base font-bold text-[#8f0019]">
+                      <span>Grand Total</span>
+                      <span className="font-mono text-lg text-[#8f0019]">₹{formatCurrency(grandTotal)}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

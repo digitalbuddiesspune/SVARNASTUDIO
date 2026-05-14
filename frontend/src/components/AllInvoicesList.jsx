@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   deleteArchivedInvoice,
   loadArchivedInvoices,
@@ -9,9 +9,17 @@ function formatCurrency(value) {
   return n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
+function parseOptionalAmount(raw) {
+  if (raw === null || raw === undefined) return null
+  const s = String(raw).trim()
+  if (s === '') return null
+  const n = Number(s)
+  return Number.isFinite(n) ? n : null
+}
+
 function grandTotalFromInvoice(inv) {
   if (!inv?.rows?.length) return 0
-  const subtotal = inv.rows.reduce((s, r) => s + (Number(r.discountedPrice) || 0), 0)
+  const subtotal = inv.rows.reduce((s, r) => s + (parseOptionalAmount(r.discountedPrice) ?? 0), 0)
   return subtotal + subtotal * 0.18
 }
 
@@ -31,9 +39,8 @@ function formatSavedAt(iso) {
   }
 }
 
-function AllInvoicesList() {
+function AllInvoicesList({ onViewInvoice }) {
   const [records, setRecords] = useState(() => loadArchivedInvoices())
-  const [expandedId, setExpandedId] = useState(null)
 
   const refresh = useCallback(() => {
     setRecords(loadArchivedInvoices())
@@ -57,15 +64,19 @@ function AllInvoicesList() {
     if (!window.confirm('Delete this saved invoice from the list?')) return
     deleteArchivedInvoice(id)
     refresh()
-    if (expandedId === id) setExpandedId(null)
+  }
+
+  const handleDetails = (inv) => {
+    if (typeof onViewInvoice !== 'function') return
+    onViewInvoice(inv)
   }
 
   return (
     <section className="rounded-2xl border border-[#eadbcb] bg-white p-4 shadow-sm md:p-6">
       <h2 className="font-serif text-2xl text-[#6f1c15]">All Invoices</h2>
       <p className="mt-1 text-sm text-[#7a5b4f]">
-        Generated invoices are stored in this browser (local storage). Open{' '}
-        <strong>Invoice Generate</strong> to create new ones.
+        Generated invoices are stored in this browser (local storage). Use{' '}
+        <strong>Details</strong> to open the full invoice in <strong>Invoice Generate</strong>.
       </p>
 
       {sorted.length === 0 ? (
@@ -89,83 +100,36 @@ function AllInvoicesList() {
               {sorted.map((rec) => {
                 const inv = rec.invoice || {}
                 const total = grandTotalFromInvoice(inv)
-                const open = expandedId === rec.id
                 return (
-                  <Fragment key={rec.id}>
-                    <tr className="border-b border-[#f0dfd4] bg-white">
-                      <td className="px-3 py-2 text-[#6e4f43]">{formatSavedAt(rec.savedAt)}</td>
-                      <td className="px-3 py-2 font-semibold tabular-nums text-[#8f0019]">
-                        {inv.invoiceNumber || '—'}
-                      </td>
-                      <td className="px-3 py-2 font-medium text-[#5f1f17]">
-                        {inv.customerName || '—'}
-                      </td>
-                      <td className="px-3 py-2 text-[#6e4f43]">{inv.customerPhone || '—'}</td>
-                      <td className="px-3 py-2 text-right font-mono font-semibold text-[#5f1f17]">
-                        ₹{formatCurrency(total)}
-                      </td>
-                      <td className="px-3 py-2">
-                        <div className="flex flex-wrap gap-1">
-                          <button
-                            type="button"
-                            onClick={() => setExpandedId(open ? null : rec.id)}
-                            className="rounded-md bg-[#f2e1d6] px-2 py-1 text-xs font-semibold text-[#5f1f17]"
-                          >
-                            {open ? 'Hide' : 'Details'}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDelete(rec.id)}
-                            className="rounded-md bg-[#ffe0e0] px-2 py-1 text-xs font-semibold text-[#8f0019]"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                    {open ? (
-                      <tr className="border-b border-[#f0dfd4] bg-[#fdfcfa]">
-                        <td colSpan={6} className="px-3 py-3 text-xs text-[#4d2018]">
-                          <div className="grid gap-2 sm:grid-cols-2">
-                            <p>
-                              <span className="font-semibold text-[#5f1f17]">Invoice date:</span>{' '}
-                              {inv.invoiceDateTime || '—'}
-                            </p>
-                            <p>
-                              <span className="font-semibold text-[#5f1f17]">Order no:</span>{' '}
-                              {inv.orderNo || '—'}
-                            </p>
-                            <p>
-                              <span className="font-semibold text-[#5f1f17]">Order date:</span>{' '}
-                              {inv.orderDateDisplay || '—'}
-                            </p>
-                            <p>
-                              <span className="font-semibold text-[#5f1f17]">Payment:</span>{' '}
-                              {inv.paymentStatus || '—'} · {inv.paymentMode || '—'}
-                            </p>
-                            <p className="sm:col-span-2">
-                              <span className="font-semibold text-[#5f1f17]">Email:</span>{' '}
-                              {inv.customerEmail || '—'}
-                            </p>
-                            <p className="sm:col-span-2 whitespace-pre-wrap">
-                              <span className="font-semibold text-[#5f1f17]">Address:</span>{' '}
-                              {inv.customerAddress || '—'}
-                            </p>
-                            <div className="sm:col-span-2">
-                              <p className="font-semibold text-[#5f1f17]">Products</p>
-                              <ul className="mt-1 list-inside list-disc text-[#6e4f43]">
-                                {(inv.rows || []).map((r) => (
-                                  <li key={r.id || r.name}>
-                                    {r.name} — ₹{formatCurrency(r.discountedPrice)}
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          </div>
-                        </td>
-                      </tr>
-                    ) : null}
-                  </Fragment>
+                  <tr key={rec.id} className="border-b border-[#f0dfd4] bg-white">
+                    <td className="px-3 py-2 text-[#6e4f43]">{formatSavedAt(rec.savedAt)}</td>
+                    <td className="px-3 py-2 font-semibold tabular-nums text-[#8f0019]">
+                      {inv.invoiceNumber || '—'}
+                    </td>
+                    <td className="px-3 py-2 font-medium text-[#5f1f17]">{inv.customerName || '—'}</td>
+                    <td className="px-3 py-2 text-[#6e4f43]">{inv.customerPhone || '—'}</td>
+                    <td className="px-3 py-2 text-right font-mono font-semibold text-[#5f1f17]">
+                      ₹{formatCurrency(total)}
+                    </td>
+                    <td className="px-3 py-2">
+                      <div className="flex flex-wrap gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleDetails(inv)}
+                          className="rounded-md bg-[#f2e1d6] px-2 py-1 text-xs font-semibold text-[#5f1f17]"
+                        >
+                          Details
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(rec.id)}
+                          className="rounded-md bg-[#ffe0e0] px-2 py-1 text-xs font-semibold text-[#8f0019]"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
                 )
               })}
             </tbody>
