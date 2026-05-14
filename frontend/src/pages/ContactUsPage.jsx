@@ -3,8 +3,6 @@ import Footer from '../components/Footer'
 
 const PHONE_NUMBERS = ['+91 73504 95906', '+91 86686 56703']
 const EMAIL_ADDRESS = 'contact@svarnastudio.in'
-const LOCATION =
-  'Ganesha Residency, Bhole Baba Nagar, Uday Nagar, Nagpur'
 const WHATSAPP_LINK = 'https://wa.me/917350495906'
 const INSTAGRAM_LINK = 'https://instagram.com/svarnastudio'
 
@@ -158,7 +156,11 @@ function ContactUsPage() {
                 <PinIcon />
               </span>
               <h3 className="mt-4 font-serif text-lg text-[#6f1b1d]">Location</h3>
-              <p className="mt-2 text-sm leading-6 text-[#5b4636]">{LOCATION}</p>
+              <p className="mt-2 text-sm leading-6 text-[#5b4636]">
+                Ganesha Residency, Bhole Baba Nagar,
+                <br />
+                Uday Nagar, Nagpur
+              </p>
             </div>
           </div>
 
