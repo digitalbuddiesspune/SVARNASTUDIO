@@ -1,3 +1,4 @@
+import InvoiceGenerator from '../components/InvoiceGenerator'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
@@ -264,7 +265,7 @@ function AdminPanelPage() {
   return (
     <main className="min-h-[calc(100vh-80px)] bg-[#faf7ec] px-4 py-8 md:px-6">
       <section className="mx-auto grid w-full max-w-7xl gap-5 lg:grid-cols-[260px_minmax(0,1fr)]">
-        <aside className="rounded-2xl border border-[#eadbcb] bg-white p-4 shadow-sm lg:sticky lg:top-6 lg:h-fit">
+        <aside className="print:hidden rounded-2xl border border-[#eadbcb] bg-white p-4 shadow-sm lg:sticky lg:top-6 lg:h-fit">
           <h1 className="font-serif text-2xl text-[#5f1f17]">Admin Panel</h1>
           <p className="mt-1 text-xs text-[#7a5b4f]">Manage products and catalog.</p>
 
@@ -275,6 +276,7 @@ function AdminPanelPage() {
               { id: 'edit', label: 'Edit Product' },
               { id: 'delete', label: 'Delete Product' },
               { id: 'all', label: 'All Products' },
+              { id: 'invoice', label: 'Invoice Generate' },
             ].map((item) => (
               <button
                 key={item.id}
@@ -300,7 +302,9 @@ function AdminPanelPage() {
           </button>
         </aside>
 
-        <div className="space-y-5">
+        <div className="space-y-5 print:max-w-none">
+          {activeSection === 'invoice' && <InvoiceGenerator />}
+
           {activeSection === 'dashboard' && (
             <section className="rounded-2xl border border-[#eadbcb] bg-white p-4 shadow-sm md:p-6">
               <h2 className="font-serif text-2xl text-[#6f1c15]">Dashboard</h2>
