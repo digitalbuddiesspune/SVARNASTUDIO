@@ -9,3 +9,279 @@ body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   background-color: #f6ecdf;
 }
+
+/* Hide scrollbars while keeping scroll (admin panels, tables, forms). */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Invoice: single A4 page — readable size, fills page height */
+@page {
+  size: A4 portrait;
+  margin: 6mm;
+}
+
+@media print {
+  body {
+    background: #fff !important;
+  }
+
+  .invoice-page-shell,
+  .invoice-page-shell * {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .invoice-page-shell {
+    padding: 0 !important;
+    margin: 0 !important;
+    background: #fff !important;
+    min-height: auto !important;
+  }
+
+  .invoice-page-shell .invoice-preview-wrap {
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+}
+
+/* Print + PDF: natural flow (no min-height gap), larger readable type */
+@media print {
+  #invoice-print-area,
+  #invoice-print-area.invoice-capture-mode {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 8mm 10mm !important;
+    margin: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    overflow: visible !important;
+    font-size: 13px !important;
+    line-height: 1.4 !important;
+  }
+
+  #invoice-print-area .invoice-footer-block,
+  #invoice-print-area.invoice-capture-mode .invoice-footer-block {
+    margin-top: 0 !important;
+  }
+
+  #invoice-print-area .invoice-footer-spacer,
+  #invoice-print-area.invoice-capture-mode .invoice-footer-spacer {
+    display: none !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  #invoice-print-area .invoice-header-block,
+  #invoice-print-area.invoice-capture-mode .invoice-header-block {
+    padding-top: 2mm !important;
+    padding-bottom: 6mm !important;
+  }
+
+  #invoice-print-area .invoice-logo,
+  #invoice-print-area.invoice-capture-mode .invoice-logo {
+    height: 30mm !important;
+    max-height: 30mm !important;
+  }
+
+  #invoice-print-area .invoice-contact-line,
+  #invoice-print-area.invoice-capture-mode .invoice-contact-line {
+    font-size: 11.5px !important;
+    line-height: 1.35 !important;
+  }
+
+  #invoice-print-area .invoice-details-block,
+  #invoice-print-area.invoice-capture-mode .invoice-details-block {
+    padding-top: 6mm !important;
+    padding-bottom: 5mm !important;
+  }
+
+  #invoice-print-area .invoice-section-title,
+  #invoice-print-area.invoice-capture-mode .invoice-section-title {
+    font-size: 13px !important;
+    margin-bottom: 2.5mm !important;
+  }
+
+  #invoice-print-area .invoice-detail-row,
+  #invoice-print-area.invoice-capture-mode .invoice-detail-row {
+    padding-top: 1.2mm !important;
+    padding-bottom: 1.2mm !important;
+    font-size: 12.5px !important;
+  }
+
+  #invoice-print-area .invoice-products-block,
+  #invoice-print-area.invoice-capture-mode .invoice-products-block {
+    padding-top: 5mm !important;
+    padding-bottom: 5mm !important;
+  }
+
+  #invoice-print-area .invoice-products-title,
+  #invoice-print-area.invoice-capture-mode .invoice-products-title {
+    font-size: 13px !important;
+    margin-bottom: 3mm !important;
+  }
+
+  #invoice-print-area .invoice-table,
+  #invoice-print-area.invoice-capture-mode .invoice-table {
+    min-width: 0 !important;
+    font-size: 12.5px !important;
+  }
+
+  #invoice-print-area .invoice-table th,
+  #invoice-print-area .invoice-table td,
+  #invoice-print-area.invoice-capture-mode .invoice-table th,
+  #invoice-print-area.invoice-capture-mode .invoice-table td {
+    padding: 2.5mm 3mm !important;
+  }
+
+  #invoice-print-area .invoice-table th,
+  #invoice-print-area.invoice-capture-mode .invoice-table th {
+    font-size: 12px !important;
+  }
+
+  #invoice-print-area .invoice-totals-block,
+  #invoice-print-area.invoice-capture-mode .invoice-totals-block {
+    padding-top: 5mm !important;
+    padding-bottom: 3mm !important;
+  }
+
+  #invoice-print-area .invoice-qr-img,
+  #invoice-print-area.invoice-capture-mode .invoice-qr-img {
+    width: 38mm !important;
+    height: 38mm !important;
+  }
+
+  #invoice-print-area .invoice-qr-label,
+  #invoice-print-area.invoice-capture-mode .invoice-qr-label {
+    font-size: 11.5px !important;
+  }
+
+  #invoice-print-area .invoice-totals-card,
+  #invoice-print-area.invoice-capture-mode .invoice-totals-card {
+    padding: 5mm 6mm !important;
+  }
+
+  #invoice-print-area .invoice-totals-card .text-base {
+    font-size: 14px !important;
+  }
+
+  #invoice-print-area .invoice-totals-card .text-lg {
+    font-size: 16px !important;
+  }
+
+  #invoice-print-area .invoice-footer-block,
+  #invoice-print-area.invoice-capture-mode .invoice-footer-block {
+    padding-top: 5mm !important;
+    padding-bottom: 5mm !important;
+    margin-top: 2mm !important;
+  }
+
+  #invoice-print-area .invoice-footer-block p,
+  #invoice-print-area.invoice-capture-mode .invoice-footer-block p {
+    font-size: 13px !important;
+  }
+
+  #invoice-print-area.invoice-many-rows,
+  #invoice-print-area.invoice-many-rows.invoice-capture-mode {
+    font-size: 11.5px !important;
+  }
+
+  #invoice-print-area.invoice-many-rows .invoice-logo,
+  #invoice-print-area.invoice-many-rows.invoice-capture-mode .invoice-logo {
+    height: 24mm !important;
+    max-height: 24mm !important;
+  }
+
+  #invoice-print-area.invoice-many-rows .invoice-table,
+  #invoice-print-area.invoice-many-rows.invoice-capture-mode .invoice-table {
+    font-size: 11px !important;
+  }
+}
+
+/* PDF capture on screen — same sizes, no forced page height */
+#invoice-print-area.invoice-capture-mode {
+  box-sizing: border-box;
+  width: 210mm;
+  padding: 8mm 10mm !important;
+  margin: 0 auto;
+  border: none !important;
+  box-shadow: none !important;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+#invoice-print-area.invoice-capture-mode .invoice-header-block {
+  padding-top: 2mm !important;
+  padding-bottom: 6mm !important;
+}
+
+#invoice-print-area.invoice-capture-mode .invoice-logo {
+  height: 30mm !important;
+  max-height: 30mm !important;
+}
+
+#invoice-print-area.invoice-capture-mode .invoice-contact-line {
+  font-size: 11.5px !important;
+}
+
+#invoice-print-area.invoice-capture-mode .invoice-details-block {
+  padding-top: 6mm !important;
+  padding-bottom: 5mm !important;
+}
+
+#invoice-print-area.invoice-capture-mode .invoice-section-title {
+  font-size: 13px !important;
+}
+
+#invoice-print-area.invoice-capture-mode .invoice-detail-row {
+  font-size: 12.5px !important;
+  padding-top: 1.2mm !important;
+  padding-bottom: 1.2mm !important;
+}
+
+#invoice-print-area.invoice-capture-mode .invoice-products-block {
+  padding-top: 5mm !important;
+  padding-bottom: 5mm !important;
+}
+
+#invoice-print-area.invoice-capture-mode .invoice-products-title {
+  font-size: 13px !important;
+}
+
+#invoice-print-area.invoice-capture-mode .invoice-table {
+  font-size: 12.5px !important;
+}
+
+#invoice-print-area.invoice-capture-mode .invoice-table th,
+#invoice-print-area.invoice-capture-mode .invoice-table td {
+  padding: 2.5mm 3mm !important;
+}
+
+#invoice-print-area.invoice-capture-mode .invoice-qr-img {
+  width: 38mm !important;
+  height: 38mm !important;
+}
+
+#invoice-print-area.invoice-capture-mode .invoice-footer-block {
+  margin-top: 2mm !important;
+  padding-top: 5mm !important;
+  padding-bottom: 5mm !important;
+}
+
+#invoice-print-area.invoice-capture-mode .invoice-footer-spacer {
+  display: none;
+  height: 0;
+}
+
+#invoice-print-area.invoice-capture-mode .invoice-footer-block p {
+  font-size: 13px !important;
+}

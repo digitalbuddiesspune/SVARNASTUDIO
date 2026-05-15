@@ -3,6 +3,8 @@ import dotenv from "dotenv";
 import express from "express";
 import connectDB from "./config/db.js";
 import productRoutes from "./routes/productRoutes.js";
+import invoiceRoutes from "./routes/invoiceRoutes.js";
+import revenueRoutes from "./routes/revenueRoutes.js";
 
 dotenv.config();
 
@@ -17,6 +19,8 @@ app.get("/", (_req, res) => {
 });
 
 app.use("/api/products", productRoutes);
+app.use("/api/invoices", invoiceRoutes);
+app.use("/api/revenue", revenueRoutes);
 
 app.use((err, _req, res, _next) => {
   console.error(err);

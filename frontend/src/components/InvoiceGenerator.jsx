@@ -1,8 +1,7 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import html2canvas from 'html2canvas'
-import { jsPDF } from 'jspdf'
-import QRCode from 'qrcode'
-import { appendArchivedInvoice } from '../utils/svarnaInvoiceArchive'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { formatCurrency, parseOptionalAmount, formatRupeeCell } from '../utils/invoiceFormat'
+import { invoiceViewPath } from '../utils/invoicePaths'
 
 /** Default logo: file `frontend/public/invoice-logo.png` (URL from site root). */
 const DEFAULT_INVOICE_LOGO = `${import.meta.env.BASE_URL}invoice-logo.png`
@@ -10,32 +9,12 @@ const DEFAULT_INVOICE_LOGO = `${import.meta.env.BASE_URL}invoice-logo.png`
 /** Fixed company contact on invoice (not editable by user). Order: phones → email → web → address. */
 const COMPANY_PHONES = ['+91 73504 95906', '+91 86686 56703']
 const COMPANY_EMAIL = 'contact@svarnastudio.in'
-const COMPANY_WEBSITE_LABEL = 'www.svarnastudio.in'
-const COMPANY_WEBSITE_HREF = 'https://svarnastudio.in'
 const COMPANY_ADDRESS_LINES = ['Ganesha Residency, Bhole Baba Nagar,', 'Uday Nagar, Nagpur']
 const COMPANY_ADDRESS = COMPANY_ADDRESS_LINES.join('\n')
 
 const DEFAULT_COMPANY_NAME = 'Svarna Studio'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
-
-/** Browser-persisted sequence: first invoice `INV-01`, then `INV-02`, … */
-const INVOICE_SEQ_STORAGE_KEY = 'svarna_invoice_sequence'
-
-function getNextInvoiceNumberString() {
-  if (typeof window === 'undefined' || !window.localStorage) {
-    return 'INV-01'
-  }
-  try {
-    const raw = window.localStorage.getItem(INVOICE_SEQ_STORAGE_KEY)
-    const prev = raw ? parseInt(raw, 10) : 0
-    const next = Number.isFinite(prev) && prev >= 0 ? prev + 1 : 1
-    window.localStorage.setItem(INVOICE_SEQ_STORAGE_KEY, String(next))
-    return `INV-${String(next).padStart(2, '0')}`
-  } catch {
-    return `INV-${Date.now()}`
-  }
-}
 
 const createRowId = () =>
   typeof crypto !== 'undefined' && crypto.randomUUID
@@ -59,18 +38,6 @@ function invoiceCategoryFromProduct(p) {
   return cat || sub || ''
 }
 
-function formatInvoiceDateTime(d) {
-  if (!(d instanceof Date) || Number.isNaN(d.getTime())) return '—'
-  return d.toLocaleString('en-IN', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true,
-  })
-}
-
 const initialDraft = () => ({
   logoDataUrl: DEFAULT_INVOICE_LOGO,
   customerName: '',
@@ -86,36 +53,13 @@ const initialDraft = () => ({
   rows: [createEmptyRow()],
 })
 
-function formatCurrency(value) {
-  const n = Number(value) || 0
-  return n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-}
-
-/** Empty / invalid → null (no default 0 in stored invoice). */
-function parseOptionalAmount(raw) {
-  if (raw === null || raw === undefined) return null
-  const s = String(raw).trim()
-  if (s === '') return null
-  const n = Number(s)
-  return Number.isFinite(n) ? n : null
-}
-
-/** Table / draft: show dash when no amount. */
-function formatRupeeCell(raw) {
-  const n = parseOptionalAmount(raw)
-  if (n === null) return '—'
-  return `₹${formatCurrency(n)}`
-}
-
-function InvoiceGenerator({ openInvoiceRequest = null }) {
-  const invoiceRef = useRef(null)
+function InvoiceGenerator({ className = '' }) {
+  const navigate = useNavigate()
   const [draft, setDraft] = useState(initialDraft)
-  const [generated, setGenerated] = useState(null)
   const [formError, setFormError] = useState('')
-  const [isPdfLoading, setIsPdfLoading] = useState(false)
-  const [upiQrDataUrl, setUpiQrDataUrl] = useState('')
   const [catalogProducts, setCatalogProducts] = useState([])
   const [catalogStatus, setCatalogStatus] = useState('loading')
+  const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -177,59 +121,6 @@ function InvoiceGenerator({ openInvoiceRequest = null }) {
     }))
   }, [catalogProducts])
 
-  useEffect(() => {
-    if (!openInvoiceRequest?.invoice) return
-    const inv =
-      typeof structuredClone !== 'undefined'
-        ? structuredClone(openInvoiceRequest.invoice)
-        : JSON.parse(JSON.stringify(openInvoiceRequest.invoice))
-    setGenerated(inv)
-    setTimeout(() => {
-      invoiceRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    }, 150)
-  }, [openInvoiceRequest?.token])
-
-  const subtotal = useMemo(() => {
-    if (!generated) return 0
-    return generated.rows.reduce(
-      (sum, row) => sum + (parseOptionalAmount(row.discountedPrice) ?? 0),
-      0,
-    )
-  }, [generated])
-
-  const gst = useMemo(() => subtotal * 0.18, [subtotal])
-  const grandTotal = useMemo(() => subtotal + gst, [subtotal, gst])
-
-  /** NPCI-style UPI intent; amount = Grand Total (incl. GST). */
-  useEffect(() => {
-    let cancelled = false
-    async function buildUpiQr() {
-      if (!generated?.upiId?.trim()) {
-        setUpiQrDataUrl('')
-        return
-      }
-      const pa = generated.upiId.trim()
-      const pn = String(generated.companyName || DEFAULT_COMPANY_NAME).slice(0, 50)
-      const tn = `Invoice ${generated.invoiceNumber || ''}`.slice(0, 80)
-      const uri = `upi://pay?pa=${encodeURIComponent(pa)}&pn=${encodeURIComponent(pn)}&am=${grandTotal.toFixed(2)}&cu=INR&tn=${encodeURIComponent(tn)}`
-      try {
-        const dataUrl = await QRCode.toDataURL(uri, {
-          width: 220,
-          margin: 2,
-          color: { dark: '#1f2937', light: '#ffffff' },
-        })
-        if (!cancelled) setUpiQrDataUrl(dataUrl)
-      } catch (e) {
-        console.error('UPI QR', e)
-        if (!cancelled) setUpiQrDataUrl('')
-      }
-    }
-    buildUpiQr()
-    return () => {
-      cancelled = true
-    }
-  }, [generated, grandTotal])
-
   const setDraftField = useCallback((key, value) => {
     setDraft((prev) => ({ ...prev, [key]: value }))
   }, [])
@@ -251,7 +142,7 @@ function InvoiceGenerator({ openInvoiceRequest = null }) {
     )
   }
 
-  const handleGenerateInvoice = () => {
+  const handleGenerateInvoice = async () => {
     setFormError('')
     if (!draft.customerName.trim()) {
       setFormError('ग्राहकाचे नाव टाका / Please enter customer name.')
@@ -263,15 +154,9 @@ function InvoiceGenerator({ openInvoiceRequest = null }) {
       return
     }
 
-    const now = new Date()
-    const invoiceNumber = getNextInvoiceNumberString()
-    const orderDateDisplay = draft.orderDate.trim()
-      ? formatInvoiceDateTime(new Date(draft.orderDate))
-      : '—'
-
-    const snapshot = {
-      companyName: DEFAULT_COMPANY_NAME,
+    const payload = {
       logoDataUrl: draft.logoDataUrl || DEFAULT_INVOICE_LOGO,
+      companyName: DEFAULT_COMPANY_NAME,
       companyPhones: [...COMPANY_PHONES],
       companyEmail: COMPANY_EMAIL,
       companyAddress: COMPANY_ADDRESS,
@@ -279,75 +164,40 @@ function InvoiceGenerator({ openInvoiceRequest = null }) {
       customerEmail: draft.customerEmail.trim(),
       customerPhone: draft.customerPhone.trim(),
       customerAddress: draft.customerAddress.trim(),
-      invoiceDateTime: formatInvoiceDateTime(now),
-      orderNo: draft.orderNo.trim() || '—',
-      invoiceNumber,
-      orderDateDisplay,
-      orderStatus: draft.orderStatus.trim() || '—',
-      paymentStatus: draft.paymentStatus.trim() || '—',
-      paymentMode: draft.paymentMode.trim() || '—',
+      orderNo: draft.orderNo.trim(),
+      orderDate: draft.orderDate.trim() || undefined,
+      orderStatus: draft.orderStatus.trim(),
+      paymentStatus: draft.paymentStatus.trim(),
+      paymentMode: draft.paymentMode.trim(),
       upiId: draft.upiId.trim(),
-      rows: productRows.map((r) => ({
-        id: r.id,
+      lineItems: productRows.map((r) => ({
+        lineId: r.id,
+        productId: r.productId || undefined,
         name: String(r.name).trim(),
         category: String(r.category || '').trim(),
-        mrp: parseOptionalAmount(r.mrp),
-        discountedPrice: parseOptionalAmount(r.discountedPrice),
+        mrp: r.mrp === '' ? null : r.mrp,
+        discountedPrice: r.discountedPrice === '' ? null : r.discountedPrice,
       })),
     }
 
-    setGenerated(snapshot)
-    appendArchivedInvoice(snapshot)
-    setTimeout(() => {
-      invoiceRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    }, 100)
-  }
-
-  const handlePrint = () => {
-    if (!generated) return
-    window.print()
-  }
-
-  const handleDownloadPdf = async () => {
-    const node = invoiceRef.current
-    if (!node || !generated) return
-    setIsPdfLoading(true)
+    setIsSaving(true)
     try {
-      const canvas = await html2canvas(node, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: false,
-        foreignObjectRendering: false,
-        logging: false,
-        backgroundColor: '#ffffff',
+      const response = await fetch(`${API_BASE_URL}/api/invoices`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
       })
-      const imgData = canvas.toDataURL('image/png')
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4',
-      })
-      const pageWidth = pdf.internal.pageSize.getWidth()
-      const pageHeight = pdf.internal.pageSize.getHeight()
-      const margin = 8
-      const maxW = pageWidth - margin * 2
-      const maxH = pageHeight - margin * 2
-      let imgW = maxW
-      let imgH = (canvas.height * imgW) / canvas.width
-      if (imgH > maxH) {
-        imgH = maxH
-        imgW = (canvas.width * imgH) / canvas.height
+      if (!response.ok) {
+        const errorBody = await response.json().catch(() => ({}))
+        throw new Error(errorBody.message || 'Failed to save invoice to database')
       }
-      const x = (pageWidth - imgW) / 2
-      const y = margin
-      pdf.addImage(imgData, 'PNG', x, y, imgW, imgH)
-      const safeName = generated.invoiceNumber.replace(/[^a-zA-Z0-9-_]/g, '_')
-      pdf.save(`${safeName}.pdf`)
-    } catch (e) {
-      console.error(e)
-      window.alert('Could not generate PDF. Please try again.')
+      const snapshot = await response.json()
+      window.dispatchEvent(new CustomEvent('svarna-invoices-changed'))
+      navigate(invoiceViewPath(snapshot))
+    } catch (error) {
+      setFormError(error.message || 'Could not save invoice')
     } finally {
-      setIsPdfLoading(false)
+      setIsSaving(false)
     }
   }
 
@@ -358,8 +208,10 @@ function InvoiceGenerator({ openInvoiceRequest = null }) {
     'mb-1 block text-xs font-semibold uppercase tracking-wide text-[#5f1f17]'
 
   return (
-    <div className="rounded-2xl border border-[#eadbcb] bg-white p-4 shadow-md md:p-6">
-      <div className="mb-6 print:hidden">
+    <div
+      className={`flex h-full min-h-0 flex-col rounded-2xl border border-[#eadbcb] bg-white p-4 shadow-md md:p-6 ${className}`}
+    >
+      <div className="mb-6 shrink-0 print:hidden">
         <h2 className="font-serif text-2xl font-semibold text-[#5f1f17] md:text-3xl">
           Invoice Generator
         </h2>
@@ -370,7 +222,7 @@ function InvoiceGenerator({ openInvoiceRequest = null }) {
       </div>
 
       {/* —— Entry form —— */}
-      <div className="print:hidden">
+      <div className="scrollbar-hide min-h-0 flex-1 overflow-y-auto overscroll-contain print:hidden">
         <div className="rounded-2xl border border-[#eadbcb] bg-white p-5 shadow-md md:p-8">
           <h3 className="border-b border-[#f0dfd4] pb-3 font-serif text-lg font-bold text-[#6f1b1d]">
             Invoice details
@@ -628,342 +480,21 @@ function InvoiceGenerator({ openInvoiceRequest = null }) {
             <button
               type="button"
               onClick={handleGenerateInvoice}
-              className="rounded-xl bg-[#8f0019] px-6 py-3 text-sm font-bold uppercase tracking-wide text-white shadow-lg transition hover:bg-[#730014]"
+              disabled={isSaving}
+              className="rounded-xl bg-[#8f0019] px-6 py-3 text-sm font-bold uppercase tracking-wide text-white shadow-lg transition hover:bg-[#730014] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Generate Invoice
+              {isSaving ? 'Saving…' : 'Generate Invoice'}
             </button>
-            {generated && (
-              <button
-                type="button"
-                onClick={handleGenerateInvoice}
-                className="rounded-xl border border-[#8f0019] bg-white px-6 py-3 text-sm font-semibold text-[#8f0019] shadow-sm transition hover:bg-[#8f0019] hover:text-white"
-              >
-                Update invoice from form
-              </button>
-            )}
           </div>
         </div>
       </div>
 
-      {generated && (
-        <div className="mb-4 mt-8 flex flex-col gap-3 print:hidden sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm font-semibold text-[#5f1f17]">Print किंवा PDF download करा.</p>
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={handlePrint}
-              className="rounded-xl border border-[#8f0019] bg-white px-4 py-2 text-sm font-semibold text-[#8f0019] shadow-sm transition hover:bg-[#8f0019] hover:text-white"
-            >
-              Print Invoice
-            </button>
-            <button
-              type="button"
-              onClick={handleDownloadPdf}
-              disabled={isPdfLoading}
-              className="rounded-xl bg-[#8f0019] px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:bg-[#730014] disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {isPdfLoading ? 'Preparing PDF…' : 'Download PDF'}
-            </button>
-          </div>
-        </div>
-      )}
 
-      {!generated && (
-        <div className="print:hidden mt-8 rounded-2xl border border-dashed border-[#ddc9b5] bg-white px-6 py-12 text-center text-[#7a5b4f]">
-          <p className="text-base font-medium">Invoice अजून generate झाले नाही.</p>
-          <p className="mt-1 text-sm">Form भरून &quot;Generate Invoice&quot; वर क्लिक करा.</p>
-        </div>
-      )}
-
-      {generated && (
-        <div
-          ref={invoiceRef}
-          id="invoice-print-area"
-          className="mt-4 overflow-hidden rounded-2xl border border-[#eadbcb] bg-white px-8 shadow-lg sm:px-12 md:px-16 lg:px-20 print:px-12"
-        >
-          {/* Top: centered logo, contact line below */}
-          <div className="border-b border-[#f0dfd4] bg-white px-0 pt-1.5 pb-8 font-sans md:pt-2 md:pb-10">
-            <div className="flex flex-col items-center gap-3">
-              <img
-                src={generated.logoDataUrl}
-                alt="Company logo"
-                className="mx-auto block h-24 w-auto max-w-[min(100%,320px)] object-contain object-center sm:h-28 md:h-32 lg:h-36"
-              />
-              <div className="flex w-full max-w-full justify-center pb-1">
-                <p className="max-w-full px-2 text-center text-xs leading-snug text-neutral-800 text-balance sm:px-3 sm:text-sm md:px-4">
-                  <span className="font-medium">
-                  {generated.companyPhones.map((phone, i) => (
-                    <span key={phone}>
-                      {i > 0 ? (
-                        <span className="text-neutral-400" aria-hidden>
-                          {' '}
-                          |{' '}
-                        </span>
-                      ) : null}
-                      <a
-                        href={`tel:${phone.replace(/\s/g, '')}`}
-                        className="hover:text-[#8f0019]"
-                      >
-                        {phone}
-                      </a>
-                    </span>
-                  ))}
-                </span>
-                <span className="text-neutral-400" aria-hidden>
-                  {' '}
-                  |{' '}
-                </span>
-                <a
-                  href={`mailto:${generated.companyEmail}`}
-                  className="inline font-medium underline decoration-neutral-300 underline-offset-2 hover:text-[#8f0019]"
-                >
-                  {generated.companyEmail}
-                </a>
-                <span className="text-neutral-400" aria-hidden>
-                  {' '}
-                  |{' '}
-                </span>
-                <span className="inline-flex items-start gap-1 text-neutral-800">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth={1.75}
-                    stroke="currentColor"
-                    className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#8f0019] sm:h-4 sm:w-4"
-                    aria-hidden
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"
-                    />
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"
-                    />
-                  </svg>
-                  <span>
-                    {String(generated.companyAddress || '')
-                      .split('\n')
-                      .map((l) => l.trim())
-                      .filter(Boolean)
-                      .join(' ')}
-                  </span>
-                </span>
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* INVOICE & ORDER + BILL TO — flat (no card box) */}
-          <div className="border-b border-neutral-200 px-0 pb-2 pt-8 font-sans md:pb-3 md:pt-10">
-            <div className="mx-auto grid max-w-5xl gap-2 sm:grid-cols-2 sm:items-start sm:gap-4">
-              <div className="min-w-0 px-1 sm:px-2">
-                <h3 className="mb-1.5 text-left text-sm font-bold uppercase tracking-wide text-slate-800">
-                  Invoice &amp; order
-                </h3>
-                <div className="flex flex-col text-sm text-slate-800">
-                  <div className="flex items-baseline justify-between gap-1.5 border-b border-neutral-100 py-1 first:pt-0">
-                    <span className="shrink-0 text-slate-600">Invoice Date</span>
-                    <span className="min-w-0 max-w-[58%] text-right font-medium text-slate-900">
-                      {generated.invoiceDateTime || '—'}
-                    </span>
-                  </div>
-                  <div className="flex items-baseline justify-between gap-1.5 border-b border-neutral-100 py-1">
-                    <span className="shrink-0 text-slate-600">Order No</span>
-                    <span className="min-w-0 max-w-[58%] text-right font-medium text-slate-900">
-                      {generated.orderNo || '—'}
-                    </span>
-                  </div>
-                  <div className="flex items-baseline justify-between gap-1.5 border-b border-neutral-100 py-1">
-                    <span className="shrink-0 text-slate-600">Invoice No</span>
-                    <span className="min-w-0 max-w-[58%] text-right font-semibold tabular-nums text-slate-900">
-                      {generated.invoiceNumber}
-                    </span>
-                  </div>
-                  <div className="flex items-baseline justify-between gap-1.5 border-b border-neutral-100 py-1">
-                    <span className="shrink-0 text-slate-600">Order Date</span>
-                    <span className="min-w-0 max-w-[58%] text-right font-medium text-slate-900">
-                      {generated.orderDateDisplay || '—'}
-                    </span>
-                  </div>
-                  <div className="flex items-baseline justify-between gap-1.5 border-b border-neutral-100 py-1">
-                    <span className="shrink-0 text-slate-600">Order Status</span>
-                    <span className="min-w-0 max-w-[58%] text-right font-medium text-slate-900">
-                      {generated.orderStatus || '—'}
-                    </span>
-                  </div>
-                  <div className="flex items-baseline justify-between gap-1.5 border-b border-neutral-100 py-1">
-                    <span className="shrink-0 text-slate-600">Payment Status</span>
-                    <span className="min-w-0 max-w-[58%] text-right font-medium text-slate-900">
-                      {generated.paymentStatus || '—'}
-                    </span>
-                  </div>
-                  <div className="flex items-baseline justify-between gap-1.5 border-b border-neutral-100 py-1">
-                    <span className="shrink-0 text-slate-600">Payment Mode</span>
-                    <span className="min-w-0 max-w-[58%] text-right font-medium text-slate-900">
-                      {generated.paymentMode || '—'}
-                    </span>
-                  </div>
-                  <div className="flex items-baseline justify-between gap-1.5 py-1 last:pb-0">
-                    <span className="shrink-0 text-slate-600">UPI ID</span>
-                    <span className="min-w-0 max-w-[58%] break-all text-right font-medium text-slate-900">
-                      {generated.upiId?.trim() ? generated.upiId.trim() : '—'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="min-w-0 px-1 sm:px-2">
-                <h3 className="mb-1.5 text-left text-sm font-bold uppercase tracking-wide text-slate-800">
-                  Bill to
-                </h3>
-                <div className="flex flex-col text-sm text-slate-800">
-                  <div className="flex items-baseline justify-between gap-1.5 border-b border-neutral-100 py-1 first:pt-0">
-                    <span className="shrink-0 text-slate-600">Name</span>
-                    <span className="min-w-0 max-w-[62%] text-right font-medium text-slate-900">
-                      {generated.customerName || '—'}
-                    </span>
-                  </div>
-                  <div className="flex items-baseline justify-between gap-1.5 border-b border-neutral-100 py-1">
-                    <span className="shrink-0 text-slate-600">Email</span>
-                    <span className="min-w-0 max-w-[62%] break-all text-right font-medium text-slate-900">
-                      {generated.customerEmail ? (
-                        <a
-                          href={`mailto:${generated.customerEmail}`}
-                          className="text-slate-900 underline decoration-slate-300 underline-offset-2 hover:text-slate-700"
-                        >
-                          {generated.customerEmail}
-                        </a>
-                      ) : (
-                        '—'
-                      )}
-                    </span>
-                  </div>
-                  <div className="flex items-baseline justify-between gap-1.5 border-b border-neutral-100 py-1">
-                    <span className="shrink-0 text-slate-600">Phone</span>
-                    <span className="min-w-0 max-w-[62%] text-right font-medium text-slate-900">
-                      {generated.customerPhone || '—'}
-                    </span>
-                  </div>
-                  <div className="flex items-start justify-between gap-1.5 py-1 last:pb-0">
-                    <span className="shrink-0 text-slate-600">Address</span>
-                    <span className="min-w-0 max-w-[62%] whitespace-pre-wrap text-right font-medium text-slate-900">
-                      {generated.customerAddress || '—'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* PRODUCTS */}
-          <div className="px-0 py-6 md:py-8">
-            <h3 className="mb-4 border-l-4 border-[#8f0019] pl-3 font-serif text-sm font-bold uppercase tracking-wider text-[#6f1b1d]">
-              PRODUCTS
-            </h3>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[720px] border-collapse text-left text-sm">
-                <thead>
-                  <tr className="bg-[#5f1f17] text-[#fdf7ef]">
-                    <th className="rounded-tl-lg px-3 py-3 font-semibold">Sr No.</th>
-                    <th className="px-3 py-3 font-semibold">Product Name</th>
-                    <th className="px-3 py-3 font-semibold">Category</th>
-                    <th className="px-3 py-3 font-semibold">MRP</th>
-                    <th className="px-3 py-3 font-semibold">Discounted Price</th>
-                    <th className="rounded-tr-lg px-3 py-3 font-semibold">Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {generated.rows.map((row, index) => {
-                    return (
-                      <tr key={row.id} className="border-b border-[#f0dfd4] bg-white">
-                        <td className="px-3 py-3 text-[#7a5b4f]">{index + 1}</td>
-                        <td className="px-3 py-3 font-medium text-[#5f1f17]">{row.name}</td>
-                        <td className="px-3 py-3 text-[#6e4f43]">{row.category || '—'}</td>
-                        <td className="px-3 py-3 font-mono text-[#6e4f43]">{formatRupeeCell(row.mrp)}</td>
-                        <td className="px-3 py-3 font-mono text-[#6e4f43]">
-                          {formatRupeeCell(row.discountedPrice)}
-                        </td>
-                        <td className="px-3 py-3 font-mono font-semibold text-[#5f1f17]">
-                          {formatRupeeCell(row.discountedPrice)}
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* Calculations — QR plain (no card); totals only in bordered card */}
-          <div className="border-t border-[#f0dfd4] bg-white px-0 py-6 md:py-8">
-            <div
-              className={`mx-auto flex gap-6 ${
-                upiQrDataUrl
-                  ? 'max-w-3xl flex-col sm:flex-row sm:items-start sm:justify-between'
-                  : 'max-w-md flex-col'
-              }`}
-            >
-              {upiQrDataUrl ? (
-                <div className="flex shrink-0 flex-col items-center sm:items-start">
-                  <p className="mb-2 text-xs font-medium text-[#6e4f43]">UPI — Pay exact amount</p>
-                  <img
-                    src={upiQrDataUrl}
-                    alt="UPI payment QR for Grand Total"
-                    className="h-[220px] w-[220px]"
-                    width={220}
-                    height={220}
-                  />
-                  <p className="mt-2 max-w-[220px] break-all text-center font-mono text-xs text-[#5f1f17] sm:text-left">
-                    ₹{formatCurrency(grandTotal)} · {generated.upiId?.trim()}
-                  </p>
-                </div>
-              ) : null}
-              <div
-                className={`rounded-xl border border-[#eadbcb] bg-white p-5 shadow-sm ${
-                  upiQrDataUrl ? 'w-full min-w-0 sm:ml-auto sm:w-[min(100%,280px)] sm:shrink-0' : 'w-full'
-                }`}
-              >
-                <div className="space-y-3">
-                  <div className="flex justify-between gap-4 text-sm text-[#6e4f43]">
-                    <span>Subtotal</span>
-                    <span className="font-mono font-semibold text-[#5f1f17]">₹{formatCurrency(subtotal)}</span>
-                  </div>
-                  <div className="flex justify-between gap-4 text-sm text-[#6e4f43]">
-                    <span>GST (18%)</span>
-                    <span className="font-mono font-semibold text-[#5f1f17]">₹{formatCurrency(gst)}</span>
-                  </div>
-                  <div className="border-t border-[#eadbcb] pt-3">
-                    <div className="flex justify-between gap-4 text-base font-bold text-[#8f0019]">
-                      <span>Grand Total</span>
-                      <span className="font-mono text-lg text-[#8f0019]">₹{formatCurrency(grandTotal)}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <footer className="border-t border-[#7a251b] bg-gradient-to-r from-[#8f0019] to-[#5f1f17] px-0 py-3 text-center md:py-3.5">
-            <p className="text-sm font-semibold leading-snug tracking-wide text-[#f8e7dc] md:text-base">
-              Thank You For Your Purchase
-            </p>
-            <p className="mt-1 text-xs leading-snug text-[#f4d3c5] md:text-sm">
-              <a
-                href={COMPANY_WEBSITE_HREF}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-semibold text-[#f8e7dc] underline decoration-[#f4d3c5]/50 underline-offset-2 hover:text-white"
-              >
-                {COMPANY_WEBSITE_LABEL}
-              </a>
-            </p>
-          </footer>
-        </div>
-      )}
+      <div className="print:hidden mt-4 shrink-0 rounded-lg border border-dashed border-[#ddc9b5] bg-[#fdfcfa] px-4 py-2.5 text-center">
+        <p className="text-sm text-[#7a5b4f]">
+          Form भरून &quot;Generate Invoice&quot; वर क्लिक केल्यावर full invoice पृष्ठ उघडेल.
+        </p>
+      </div>
     </div>
   )
 }

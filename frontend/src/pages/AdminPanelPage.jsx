@@ -1,7 +1,8 @@
 import InvoiceGenerator from '../components/InvoiceGenerator'
 import AllInvoicesList from '../components/AllInvoicesList'
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { formatCurrency } from '../utils/invoiceFormat'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
 const ADMIN_STORAGE_KEY = 'svarna_admin_auth'
@@ -73,17 +74,127 @@ const defaultForm = {
   isNewArrival: false,
 }
 
+/** White card shell for the narrow left sidebar (no flex-1 — fixed column width). */
+const ADMIN_SIDEBAR_CARD =
+  'flex h-full min-h-0 flex-col rounded-2xl border border-[#eadbcb] bg-white p-4 shadow-sm md:p-6'
+
+/** White card shell for right-side panels — grows to fill remaining width. */
+const ADMIN_PANEL_CARD =
+  'flex h-full min-h-0 flex-1 flex-col rounded-2xl border border-[#eadbcb] bg-white p-4 shadow-sm md:p-6'
+
+const ADMIN_PANEL_SCROLL =
+  'scrollbar-hide min-h-0 flex-1 overflow-y-auto overscroll-contain pr-0.5'
+
+const DASHBOARD_STAT_CARD =
+  'w-full rounded-xl bg-[#f9ece5] p-4 text-left'
+
+const DASHBOARD_STAT_CARD_CLICKABLE = `${DASHBOARD_STAT_CARD} cursor-pointer transition hover:bg-[#f2e0d4] hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8f0019]/40`
+
+function AdminIcon({ children, className = 'h-5 w-5' }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden
+    >
+      {children}
+    </svg>
+  )
+}
+
+const IconDashboard = ({ className }) => (
+  <AdminIcon className={className}>
+    <rect x="3" y="3" width="7" height="7" rx="1" />
+    <rect x="14" y="3" width="7" height="7" rx="1" />
+    <rect x="3" y="14" width="7" height="7" rx="1" />
+    <rect x="14" y="14" width="7" height="7" rx="1" />
+  </AdminIcon>
+)
+
+const IconProducts = ({ className }) => (
+  <AdminIcon className={className}>
+    <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" />
+    <path d="M3.3 7.7L12 12.5l8.7-4.8M12 22V12.5" />
+  </AdminIcon>
+)
+
+const IconPlus = ({ className }) => (
+  <AdminIcon className={className}>
+    <path d="M12 5v14M5 12h14" />
+  </AdminIcon>
+)
+
+const IconStar = ({ className }) => (
+  <AdminIcon className={className}>
+    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z" />
+  </AdminIcon>
+)
+
+const IconLayers = ({ className }) => (
+  <AdminIcon className={className}>
+    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+  </AdminIcon>
+)
+
+const IconReceipt = ({ className }) => (
+  <AdminIcon className={className}>
+    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+    <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" />
+  </AdminIcon>
+)
+
+const IconFileInvoice = ({ className }) => (
+  <AdminIcon className={className}>
+    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+    <path d="M14 2v6h6M8 13h2M8 17h6M8 9h1" />
+  </AdminIcon>
+)
+
+const IconList = ({ className }) => (
+  <AdminIcon className={className}>
+    <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
+  </AdminIcon>
+)
+
+const IconRupee = ({ className }) => (
+  <AdminIcon className={className}>
+    <path d="M6 3h12M6 8h8a4 4 0 010 8H6M6 21h12" />
+  </AdminIcon>
+)
+
+const IconLogout = ({ className }) => (
+  <AdminIcon className={className}>
+    <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
+  </AdminIcon>
+)
+
+const ADMIN_NAV_ITEMS = [
+  { id: 'dashboard', label: 'Dashboard', Icon: IconDashboard },
+  { id: 'add', label: 'Add Product', Icon: IconPlus },
+  { id: 'all', label: 'All Products', Icon: IconProducts },
+  { id: 'invoice', label: 'Invoice Generate', Icon: IconFileInvoice },
+  { id: 'invoices-all', label: 'All Invoices', Icon: IconList },
+]
+
 function AdminPanelPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [products, setProducts] = useState([])
   const [form, setForm] = useState(defaultForm)
   const [editingId, setEditingId] = useState('')
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [detailProduct, setDetailProduct] = useState(null)
   const [activeSection, setActiveSection] = useState('dashboard')
   const [status, setStatus] = useState('')
   const [loading, setLoading] = useState(true)
-  const [invoiceOpenRequest, setInvoiceOpenRequest] = useState(null)
-
+  const [dashboardStats, setDashboardStats] = useState({ orderCount: 0, totalRevenue: 0 })
+  const [dashboardStatsLoading, setDashboardStatsLoading] = useState(true)
   const subCategoryOptions = useMemo(() => {
     return categoryOptions.find((item) => item.category === form.category)?.subCategories || []
   }, [form.category])
@@ -102,6 +213,24 @@ function AdminPanelPage() {
     }
   }
 
+  const fetchDashboardStats = async () => {
+    setDashboardStatsLoading(true)
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/revenue/dashboard`)
+      if (!response.ok) throw new Error('Failed to load dashboard stats')
+      const data = await response.json()
+      setDashboardStats({
+        orderCount: Number(data.orderCount) || 0,
+        totalRevenue: Number(data.totalRevenue) || 0,
+      })
+    } catch (error) {
+      setDashboardStats({ orderCount: 0, totalRevenue: 0 })
+      setStatus(error.message)
+    } finally {
+      setDashboardStatsLoading(false)
+    }
+  }
+
   useEffect(() => {
     const isAuth = localStorage.getItem(ADMIN_STORAGE_KEY) === 'true'
     if (!isAuth) {
@@ -110,6 +239,20 @@ function AdminPanelPage() {
     }
     fetchProducts()
   }, [navigate])
+
+  useEffect(() => {
+    const section = location.state?.section
+    if (section) {
+      setActiveSection(section)
+      navigate(location.pathname, { replace: true, state: {} })
+    }
+  }, [location.state, location.pathname, navigate])
+
+  useEffect(() => {
+    if (activeSection === 'dashboard') {
+      fetchDashboardStats()
+    }
+  }, [activeSection])
 
   useEffect(() => {
     if (!subCategoryOptions.includes(form.subCategory)) {
@@ -121,11 +264,11 @@ function AdminPanelPage() {
   }, [form.subCategory, subCategoryOptions])
 
   useEffect(() => {
-    document.body.style.overflow = isEditModalOpen ? 'hidden' : ''
+    document.body.style.overflow = isEditModalOpen || detailProduct ? 'hidden' : ''
     return () => {
       document.body.style.overflow = ''
     }
-  }, [isEditModalOpen])
+  }, [isEditModalOpen, detailProduct])
 
   const handleChange = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }))
@@ -203,9 +346,10 @@ function AdminPanelPage() {
     }
   }
 
-  const handleEdit = (product) => {
+  const handleEdit = (product, event) => {
+    event?.stopPropagation()
     setEditingId(product._id)
-    setActiveSection('edit')
+    setActiveSection('all')
     setIsEditModalOpen(true)
     setForm({
       productName: product.productName || '',
@@ -228,7 +372,8 @@ function AdminPanelPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  const handleDelete = async (productId) => {
+  const handleDelete = async (productId, event) => {
+    event?.stopPropagation()
     const shouldDelete = window.confirm('Delete this product?')
     if (!shouldDelete) return
 
@@ -247,8 +392,9 @@ function AdminPanelPage() {
       }
       await fetchProducts()
       if (editingId === productId) resetForm()
+      setDetailProduct((current) => (current?._id === productId ? null : current))
       setStatus('Product deleted successfully.')
-      setActiveSection('delete')
+      setActiveSection('all')
     } catch (error) {
       setStatus(error.message)
     }
@@ -262,39 +408,28 @@ function AdminPanelPage() {
   const totalProducts = products.length
   const featuredProducts = products.filter((product) => product.isFeatured).length
   const totalCategories = new Set(products.map((product) => product.category).filter(Boolean)).size
-  const lowStockProducts = products.filter((product) => Number(product.stock || 0) <= 2).length
 
   return (
-    <main className="min-h-[calc(100vh-80px)] bg-[#faf7ec] px-4 py-8 md:px-6">
-      <section className="mx-auto grid w-full max-w-7xl gap-5 lg:grid-cols-[260px_minmax(0,1fr)]">
-        <aside className="print:hidden rounded-2xl border border-[#eadbcb] bg-white p-4 shadow-sm lg:sticky lg:top-6 lg:h-fit">
+    <main className="flex min-h-screen flex-col bg-[#faf7ec] px-4 py-4 md:px-6 lg:h-screen lg:max-h-screen lg:overflow-hidden">
+      <section className="mx-auto flex h-full min-h-0 w-full max-w-7xl flex-1 flex-col gap-5 lg:grid lg:grid-cols-[minmax(200px,22%)_minmax(0,1fr)] lg:items-stretch">
+        <aside className={`print:hidden flex w-full self-stretch ${ADMIN_SIDEBAR_CARD}`}>
           <h1 className="font-serif text-2xl text-[#5f1f17]">Admin Panel</h1>
           <p className="mt-1 text-xs text-[#7a5b4f]">Manage products and catalog.</p>
 
-          <nav className="mt-4 space-y-2">
-            {[
-              { id: 'dashboard', label: 'Dashboard' },
-              { id: 'add', label: 'Add Product' },
-              { id: 'edit', label: 'Edit Product' },
-              { id: 'delete', label: 'Delete Product' },
-              { id: 'all', label: 'All Products' },
-              { id: 'invoice', label: 'Invoice Generate' },
-              { id: 'invoices-all', label: 'All Invoices' },
-            ].map((item) => (
+          <nav className="mt-4 flex flex-col gap-2 lg:flex-1">
+            {ADMIN_NAV_ITEMS.map(({ id, label, Icon }) => (
               <button
-                key={item.id}
+                key={id}
                 type="button"
-                onClick={() => {
-                  if (item.id === 'invoice') setInvoiceOpenRequest(null)
-                  setActiveSection(item.id)
-                }}
-                className={`w-full rounded-lg px-3 py-2 text-left text-sm font-semibold transition ${
-                  activeSection === item.id
+                onClick={() => setActiveSection(id)}
+                className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm font-semibold transition ${
+                  activeSection === id
                     ? 'bg-[#8f0019] text-white'
                     : 'bg-[#f8efe7] text-[#5f1f17] hover:bg-[#f2dfd1]'
                 }`}
               >
-                {item.label}
+                <Icon className="h-4 w-4 shrink-0" />
+                {label}
               </button>
             ))}
           </nav>
@@ -302,64 +437,85 @@ function AdminPanelPage() {
           <button
             type="button"
             onClick={handleLogout}
-            className="mt-6 w-full rounded-lg border border-[#8f0019] px-4 py-2 text-sm font-semibold text-[#8f0019] transition hover:bg-[#8f0019] hover:text-white"
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-[#8f0019] px-4 py-2 text-sm font-semibold text-[#8f0019] transition hover:bg-[#8f0019] hover:text-white lg:mt-auto"
           >
+            <IconLogout className="h-4 w-4" />
             Logout
           </button>
         </aside>
 
-        <div className="space-y-5 print:max-w-none">
+        <div className="flex h-full min-h-0 flex-1 flex-col self-stretch print:max-w-none lg:min-w-0">
           {activeSection === 'invoice' && (
-            <InvoiceGenerator openInvoiceRequest={invoiceOpenRequest} />
+            <InvoiceGenerator className="min-h-0 flex-1 shadow-sm" />
           )}
 
-          {activeSection === 'invoices-all' && (
-            <AllInvoicesList
-              onViewInvoice={(invoice) => {
-                const inv =
-                  typeof structuredClone !== 'undefined'
-                    ? structuredClone(invoice)
-                    : JSON.parse(JSON.stringify(invoice))
-                setInvoiceOpenRequest({ invoice: inv, token: Date.now() })
-                setActiveSection('invoice')
-              }}
-            />
-          )}
+          {activeSection === 'invoices-all' && <AllInvoicesList className="min-h-0 flex-1" />}
 
           {activeSection === 'dashboard' && (
-            <section className="rounded-2xl border border-[#eadbcb] bg-white p-4 shadow-sm md:p-6">
-              <h2 className="font-serif text-2xl text-[#6f1c15]">Dashboard</h2>
-              <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                <article className="rounded-xl bg-[#f9ece5] p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-[#8f0019]">Total Products</p>
-                  <p className="mt-2 text-3xl font-bold text-[#5f1f17]">{totalProducts}</p>
+            <section className={ADMIN_PANEL_CARD}>
+              <h2 className="shrink-0 font-serif text-2xl text-[#6f1c15]">Dashboard</h2>
+              <div className="mt-4 grid flex-1 content-start gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <button
+                  type="button"
+                  onClick={() => setActiveSection('all')}
+                  className={DASHBOARD_STAT_CARD_CLICKABLE}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-[#8f0019]">Total Products</p>
+                    <IconProducts className="h-5 w-5 text-[#8f0019]/80" />
+                  </div>
+                  <p className="mt-2 text-3xl font-bold text-[#5f1f17]">{loading ? '…' : totalProducts}</p>
+                </button>
+                <article className={DASHBOARD_STAT_CARD}>
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-[#8f0019]">Featured</p>
+                    <IconStar className="h-5 w-5 text-[#8f0019]/80" />
+                  </div>
+                  <p className="mt-2 text-3xl font-bold text-[#5f1f17]">{loading ? '…' : featuredProducts}</p>
                 </article>
-                <article className="rounded-xl bg-[#f9ece5] p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-[#8f0019]">Featured</p>
-                  <p className="mt-2 text-3xl font-bold text-[#5f1f17]">{featuredProducts}</p>
+                <article className={DASHBOARD_STAT_CARD}>
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-[#8f0019]">Categories</p>
+                    <IconLayers className="h-5 w-5 text-[#8f0019]/80" />
+                  </div>
+                  <p className="mt-2 text-3xl font-bold text-[#5f1f17]">{loading ? '…' : totalCategories}</p>
                 </article>
-                <article className="rounded-xl bg-[#f9ece5] p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-[#8f0019]">Categories</p>
-                  <p className="mt-2 text-3xl font-bold text-[#5f1f17]">{totalCategories}</p>
-                </article>
-                <article className="rounded-xl bg-[#fff1ee] p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-[#b42318]">Low Stock (&lt;=2)</p>
-                  <p className="mt-2 text-3xl font-bold text-[#8f0019]">{lowStockProducts}</p>
-                </article>
+                <button
+                  type="button"
+                  onClick={() => setActiveSection('invoices-all')}
+                  className={DASHBOARD_STAT_CARD_CLICKABLE}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-[#8f0019]">Order Count</p>
+                    <IconReceipt className="h-5 w-5 text-[#8f0019]/80" />
+                  </div>
+                  <p className="mt-2 text-3xl font-bold text-[#5f1f17]">
+                    {dashboardStatsLoading ? '…' : dashboardStats.orderCount}
+                  </p>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveSection('invoices-all')}
+                  className={DASHBOARD_STAT_CARD_CLICKABLE}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-[#8f0019]">Revenue</p>
+                    <IconRupee className="h-5 w-5 text-[#8f0019]/80" />
+                  </div>
+                  <p className="mt-2 text-3xl font-bold text-[#5f1f17]">
+                    {dashboardStatsLoading ? '…' : `₹${formatCurrency(dashboardStats.totalRevenue)}`}
+                  </p>
+                </button>
               </div>
             </section>
           )}
 
           {activeSection === 'add' && (
-            <form
-              onSubmit={handleSubmit}
-              className="rounded-2xl border border-[#eadbcb] bg-white p-4 shadow-sm md:p-6"
-            >
-              <h2 className="font-serif text-2xl text-[#6f1c15]">
-                Add Product
-              </h2>
+            <form onSubmit={handleSubmit} className={ADMIN_PANEL_CARD}>
+              <h2 className="shrink-0 font-serif text-2xl text-[#6f1c15]">Add Product</h2>
 
-              <div className="mt-4 grid gap-3 md:grid-cols-2">
+              <div className={`${ADMIN_PANEL_SCROLL} mt-4`}>
+              <div className="grid gap-3 md:grid-cols-2">
                 <input
                   placeholder="Product Name *"
                   value={form.productName}
@@ -493,105 +649,154 @@ function AdminPanelPage() {
                   Add Product
                 </button>
               </div>
+              </div>
             </form>
           )}
 
-          {activeSection === 'edit' && (
-            <section className="rounded-2xl border border-[#eadbcb] bg-white p-4 shadow-sm md:p-6">
-              <h2 className="font-serif text-2xl text-[#6f1c15]">Edit Products</h2>
-              <p className="mt-1 text-sm text-[#7a5b4f]">
-                Click edit on any card to open the scrollable edit popup.
-              </p>
-
+          {activeSection === 'all' && (
+            <section className={`${ADMIN_PANEL_CARD} lg:overflow-hidden`}>
+              <div className="shrink-0">
+                <h2 className="font-serif text-2xl text-[#6f1c15]">All Products</h2>
+                <p className="mt-1 text-sm text-[#7a5b4f]">Click a row to view full product details.</p>
+              </div>
               {loading ? (
-                <p className="mt-3 text-sm text-[#7a5b4f]">Loading products...</p>
+                <p className="mt-3 shrink-0 text-sm text-[#7a5b4f]">Loading products...</p>
+              ) : products.length === 0 ? (
+                <p className="mt-3 shrink-0 text-sm text-[#7a5b4f]">No products yet.</p>
               ) : (
-                <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                  {products.map((product) => (
-                    <article
-                      key={product._id}
-                      className="overflow-hidden rounded-xl border border-[#eadbcb] bg-white shadow-sm"
-                    >
-                      <img
-                        src={product.productImages?.[0] || 'https://via.placeholder.com/400x500?text=Product'}
-                        alt={product.productName}
-                        className="aspect-square w-full bg-[#fdf7ef] object-contain p-2"
-                      />
-                      <div className="p-3">
-                        <p className="text-xs font-semibold uppercase tracking-wider text-[#8f0019]">
-                          {product.category} - {product.subCategory}
-                        </p>
-                        <h3 className="mt-1 line-clamp-2 font-serif text-lg text-[#5f1f17]">
-                          {product.productName}
-                        </h3>
-                        <p className="mt-1 text-sm text-[#6e4f43]">
-                          Rs. {product.price?.discountedPrice ?? product.price?.mrp ?? 0}
-                        </p>
-                        <div className="mt-3 flex gap-2">
-                          <button
-                            type="button"
-                            onClick={() => handleEdit(product)}
-                            className="rounded-md bg-[#f2e1d6] px-3 py-1.5 text-xs font-semibold text-[#5f1f17]"
+                <div className="mt-4 flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-[#eadbcb]">
+                  <div className="scrollbar-hide min-h-0 flex-1 overflow-x-auto overflow-y-auto overscroll-contain">
+                  <table className="w-full min-w-[800px] table-fixed border-collapse text-left text-sm">
+                    <colgroup>
+                      <col className="w-[88px]" />
+                      <col />
+                      <col className="w-[140px]" />
+                      <col className="w-[88px]" />
+                      <col className="w-[140px]" />
+                    </colgroup>
+                    <thead>
+                      <tr className="border-b border-[#eadbcb] bg-[#fdf7ef] text-xs font-semibold uppercase tracking-wide text-[#6e4f43]">
+                        <th className="sticky top-0 z-10 border-b border-[#eadbcb] bg-[#fdf7ef] px-3 py-3 font-semibold shadow-sm">
+                          Image
+                        </th>
+                        <th className="sticky top-0 z-10 border-b border-[#eadbcb] bg-[#fdf7ef] px-3 py-3 font-semibold shadow-sm">
+                          Product name
+                        </th>
+                        <th className="sticky top-0 z-10 border-b border-[#eadbcb] bg-[#fdf7ef] px-3 py-3 font-semibold shadow-sm">
+                          Price
+                        </th>
+                        <th className="sticky top-0 z-10 border-b border-[#eadbcb] bg-[#fdf7ef] px-3 py-3 font-semibold shadow-sm">
+                          Stock
+                        </th>
+                        <th className="sticky top-0 z-10 border-b border-[#eadbcb] bg-[#fdf7ef] px-3 py-3 font-semibold shadow-sm">
+                          Action
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {products.map((product) => {
+                        const thumb =
+                          product.productImages?.[0] || 'https://via.placeholder.com/120x120?text=No+image'
+                        const mrp = product.price?.mrp
+                        const discounted = product.price?.discountedPrice
+                        const hasDiscount =
+                          mrp != null &&
+                          discounted != null &&
+                          Number(mrp) !== Number(discounted)
+                        return (
+                          <tr
+                            key={product._id}
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => setDetailProduct(product)}
+                            onKeyDown={(event) => {
+                              if (event.key === 'Enter' || event.key === ' ') {
+                                event.preventDefault()
+                                setDetailProduct(product)
+                              }
+                            }}
+                            className="cursor-pointer border-b border-[#f0e6da] transition hover:bg-[#fffaf6] focus:bg-[#fffaf6] focus:outline-none"
                           >
-                            Edit
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDelete(product._id)}
-                            className="rounded-md bg-[#ffe0e0] px-3 py-1.5 text-xs font-semibold text-[#8f0019]"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              )}
-
-            </section>
-          )}
-
-          {(activeSection === 'all' || activeSection === 'delete') && (
-            <section className="rounded-2xl border border-[#eadbcb] bg-white p-4 shadow-sm md:p-6">
-              <h2 className="font-serif text-2xl text-[#6f1c15]">All Products</h2>
-              {loading ? (
-                <p className="mt-3 text-sm text-[#7a5b4f]">Loading products...</p>
-              ) : (
-                <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                  {products.map((product) => (
-                    <article
-                      key={product._id}
-                      className="rounded-xl border border-[#eadbcb] bg-white p-3 shadow-sm"
-                    >
-                      <p className="text-xs font-semibold uppercase tracking-wider text-[#8f0019]">
-                        {product.category} - {product.subCategory}
-                      </p>
-                      <h3 className="mt-1 line-clamp-2 font-serif text-lg text-[#5f1f17]">
-                        {product.productName}
-                      </h3>
-                      <p className="mt-1 text-sm text-[#6e4f43]">
-                        Rs. {product.price?.discountedPrice ?? product.price?.mrp ?? 0}
-                      </p>
-
-                      <div className="mt-3 flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() => handleEdit(product)}
-                          className="rounded-md bg-[#f2e1d6] px-3 py-1.5 text-xs font-semibold text-[#5f1f17]"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDelete(product._id)}
-                          className="rounded-md bg-[#ffe0e0] px-3 py-1.5 text-xs font-semibold text-[#8f0019]"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </article>
-                  ))}
+                            <td className="px-3 py-2 align-middle">
+                              <img
+                                src={thumb}
+                                alt={product.productName || 'Product'}
+                                className="h-16 w-16 rounded-lg border border-[#eadbcb] bg-[#fdf7ef] object-cover"
+                              />
+                            </td>
+                            <td className="min-w-0 max-w-md break-words px-3 py-3 align-middle">
+                              <p className="font-serif text-base font-semibold leading-snug text-[#5f1f17]">
+                                {product.productName}
+                              </p>
+                              {(product.isFeatured || product.isTrendingNow || product.isNewArrival) && (
+                                <div className="mt-1.5 flex flex-wrap gap-1">
+                                  {product.isFeatured && (
+                                    <span className="rounded bg-[#f2e1d6] px-1.5 py-0.5 text-[10px] font-semibold uppercase text-[#5f1f17]">
+                                      Featured
+                                    </span>
+                                  )}
+                                  {product.isTrendingNow && (
+                                    <span className="rounded bg-[#e8f0ff] px-1.5 py-0.5 text-[10px] font-semibold uppercase text-[#1e3a5f]">
+                                      Trending
+                                    </span>
+                                  )}
+                                  {product.isNewArrival && (
+                                    <span className="rounded bg-[#e8f8ef] px-1.5 py-0.5 text-[10px] font-semibold uppercase text-[#1a5f2e]">
+                                      New
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                            </td>
+                            <td className="px-3 py-3 align-middle">
+                              <div className="space-y-1 text-[#5f1f17]">
+                                <p>
+                                  <span className="text-[10px] font-semibold uppercase tracking-wide text-[#8f0019]">
+                                    {hasDiscount ? 'Discounted' : 'Price'}
+                                  </span>
+                                  <br />
+                                  <span className="font-semibold">
+                                    Rs. {discounted ?? mrp ?? 0}
+                                  </span>
+                                </p>
+                                {hasDiscount && (
+                                  <p>
+                                    <span className="text-[10px] font-semibold uppercase tracking-wide text-[#6e4f43]">
+                                      MRP
+                                    </span>
+                                    <br />
+                                    <span className="text-sm text-[#6e4f43] line-through">Rs. {mrp}</span>
+                                  </p>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-3 py-3 align-middle font-semibold text-[#5f1f17]">
+                              {product.stock ?? 0}
+                            </td>
+                            <td className="px-3 py-3 align-middle">
+                              <div className="flex flex-wrap gap-2">
+                                <button
+                                  type="button"
+                                  onClick={(event) => handleEdit(product, event)}
+                                  className="rounded-md bg-[#f2e1d6] px-3 py-1.5 text-xs font-semibold text-[#5f1f17]"
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={(event) => handleDelete(product._id, event)}
+                                  className="rounded-md bg-[#ffe0e0] px-3 py-1.5 text-xs font-semibold text-[#8f0019]"
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                  </div>
                 </div>
               )}
             </section>
@@ -616,7 +821,7 @@ function AdminPanelPage() {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-4 py-4 md:px-6">
+            <form onSubmit={handleSubmit} className="scrollbar-hide flex-1 overflow-y-auto px-4 py-4 md:px-6">
               <div className="grid gap-3 md:grid-cols-2">
                 <label className="block">
                   <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[#5f1f17]">
@@ -797,6 +1002,174 @@ function AdminPanelPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {detailProduct && (
+        <div
+          className="fixed inset-0 z-[88] flex items-center justify-center bg-black/45 p-3 md:p-6"
+          onClick={() => setDetailProduct(null)}
+        >
+          <div
+            className="flex max-h-[min(90vh,900px)] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-[#fffaf6] shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex shrink-0 items-start justify-between gap-3 border-b border-[#eadbcb] px-4 py-3 md:px-6">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-[#8f0019]">
+                  {detailProduct.category} — {detailProduct.subCategory}
+                </p>
+                <h3 className="mt-1 font-serif text-2xl text-[#6f1c15]">{detailProduct.productName}</h3>
+                {detailProduct.brand && (
+                  <p className="mt-1 text-sm text-[#6e4f43]">{detailProduct.brand}</p>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => setDetailProduct(null)}
+                className="shrink-0 rounded-lg border border-[#ddc9b5] px-3 py-1.5 text-sm font-semibold text-[#5f1f17]"
+              >
+                Close
+              </button>
+            </div>
+
+            <div className="scrollbar-hide min-h-0 flex-1 overflow-y-auto px-4 py-4 md:px-6">
+              {detailProduct.productImages?.length > 0 && (
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
+                  {detailProduct.productImages.map((url, index) => (
+                    <img
+                      key={`${url}-${index}`}
+                      src={url}
+                      alt={`${detailProduct.productName} ${index + 1}`}
+                      className="aspect-square w-full rounded-lg border border-[#eadbcb] bg-[#fdf7ef] object-cover"
+                    />
+                  ))}
+                </div>
+              )}
+
+              <dl className="mt-4 grid gap-3 sm:grid-cols-2">
+                <div className="rounded-lg border border-[#eadbcb] bg-white p-3">
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-[#8f0019]">Selling price</dt>
+                  <dd className="mt-1 text-lg font-semibold text-[#5f1f17]">
+                    Rs. {detailProduct.price?.discountedPrice ?? detailProduct.price?.mrp ?? 0}
+                  </dd>
+                </div>
+                <div className="rounded-lg border border-[#eadbcb] bg-white p-3">
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-[#8f0019]">MRP & discount</dt>
+                  <dd className="mt-1 text-sm text-[#5f1f17]">
+                    MRP: Rs. {detailProduct.price?.mrp ?? '—'}
+                    {detailProduct.price?.discountPercent != null && (
+                      <span className="ml-2 text-[#6e4f43]">
+                        ({detailProduct.price.discountPercent}% off)
+                      </span>
+                    )}
+                  </dd>
+                </div>
+                <div className="rounded-lg border border-[#eadbcb] bg-white p-3">
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-[#8f0019]">Stock</dt>
+                  <dd className="mt-1 font-semibold text-[#5f1f17]">{detailProduct.stock ?? 0}</dd>
+                </div>
+                <div className="rounded-lg border border-[#eadbcb] bg-white p-3">
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-[#8f0019]">Flags</dt>
+                  <dd className="mt-1 flex flex-wrap gap-1 text-sm text-[#5f1f17]">
+                    {detailProduct.isFeatured && <span>Featured</span>}
+                    {detailProduct.isTrendingNow && <span>Trending</span>}
+                    {detailProduct.isNewArrival && <span>New arrival</span>}
+                    {!detailProduct.isFeatured &&
+                      !detailProduct.isTrendingNow &&
+                      !detailProduct.isNewArrival && <span className="text-[#6e4f43]">None</span>}
+                  </dd>
+                </div>
+              </dl>
+
+              {[
+                ['Type', detailProduct.type],
+                ['Color', detailProduct.color],
+                ['Pattern', detailProduct.pattern],
+                ['Fabric', detailProduct.fabric],
+                ['Fit', detailProduct.fit],
+                ['Occasion', detailProduct.occasion],
+                ['Length', detailProduct.length],
+                ['Kurta length', detailProduct.kurtaLength],
+                ['Saree length', detailProduct.sareeLength],
+                ['Sleeves', detailProduct.sleeves],
+                ['Neck', detailProduct.neck],
+                ['Closure', detailProduct.closure],
+                ['Back design', detailProduct.backDesign],
+                ['Bottom', detailProduct.bottom],
+                ['Dupatta', detailProduct.dupatta],
+                ['Blouse piece', detailProduct.blousePiece],
+                ['Texture', detailProduct.texture],
+                ['Finish', detailProduct.finish],
+              ]
+                .filter(([, value]) => value)
+                .map(([label, value]) => (
+                  <div key={label} className="mt-3 border-b border-[#f0e6da] pb-2">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-[#8f0019]">{label}</p>
+                    <p className="mt-1 text-sm text-[#5f1f17]">{value}</p>
+                  </div>
+                ))}
+
+              {detailProduct.availableColors?.length > 0 && (
+                <div className="mt-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-[#8f0019]">Available colors</p>
+                  <p className="mt-1 text-sm text-[#5f1f17]">{detailProduct.availableColors.join(', ')}</p>
+                </div>
+              )}
+
+              {detailProduct.design_details &&
+                Object.keys(detailProduct.design_details).some(
+                  (key) => detailProduct.design_details[key]?.length > 0
+                ) && (
+                  <div className="mt-4 rounded-lg border border-[#eadbcb] bg-white p-3">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-[#8f0019]">
+                      Design details
+                    </p>
+                    <ul className="mt-2 space-y-2 text-sm text-[#5f1f17]">
+                      {Object.entries(detailProduct.design_details).map(([key, values]) =>
+                        Array.isArray(values) && values.length > 0 ? (
+                          <li key={key}>
+                            <span className="font-semibold capitalize">
+                              {key.replace(/_/g, ' ')}:{' '}
+                            </span>
+                            {values.join(', ')}
+                          </li>
+                        ) : null
+                      )}
+                    </ul>
+                  </div>
+                )}
+
+              {detailProduct.details && (
+                <div className="mt-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-[#8f0019]">Details</p>
+                  <p className="mt-1 whitespace-pre-wrap text-sm text-[#5f1f17]">{detailProduct.details}</p>
+                </div>
+              )}
+              {detailProduct.description && (
+                <div className="mt-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-[#8f0019]">Description</p>
+                  <p className="mt-1 whitespace-pre-wrap text-sm text-[#5f1f17]">{detailProduct.description}</p>
+                </div>
+              )}
+              {detailProduct.styleTip && (
+                <div className="mt-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-[#8f0019]">Style tip</p>
+                  <p className="mt-1 whitespace-pre-wrap text-sm text-[#5f1f17]">{detailProduct.styleTip}</p>
+                </div>
+              )}
+
+              <div className="mt-6 border-t border-[#eadbcb] pt-3 text-xs text-[#7a5b4f]">
+                <p>Product ID: {detailProduct._id}</p>
+                {detailProduct.createdAt && (
+                  <p className="mt-1">Created: {new Date(detailProduct.createdAt).toLocaleString()}</p>
+                )}
+                {detailProduct.updatedAt && (
+                  <p className="mt-1">Updated: {new Date(detailProduct.updatedAt).toLocaleString()}</p>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}
