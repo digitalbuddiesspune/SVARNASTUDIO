@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import html2canvas from 'html2canvas'
 import { jsPDF } from 'jspdf'
 import QRCode from 'qrcode'
@@ -11,10 +11,17 @@ import {
   invoiceTotals,
 } from '../utils/invoiceFormat'
 
+/** Fixed layout width (matches PDF capture) — scaled down on narrow screens, layout unchanged. */
+const INVOICE_LAYOUT_WIDTH = 794
+const MOBILE_FIT_ONE_SCREEN_MQ = '(max-width: 767px)'
+
 function InvoicePreview({ invoice, className = '' }) {
   const invoiceRef = useRef(null)
+  const scaleShellRef = useRef(null)
   const [isPdfLoading, setIsPdfLoading] = useState(false)
   const [upiQrDataUrl, setUpiQrDataUrl] = useState('')
+  const [viewportScale, setViewportScale] = useState(1)
+  const [scaledWrapHeight, setScaledWrapHeight] = useState(null)
 
   const { subtotal, gst, grandTotal } = useMemo(() => invoiceTotals(invoice), [invoice])
 
@@ -46,6 +53,48 @@ function InvoicePreview({ invoice, className = '' }) {
       cancelled = true
     }
   }, [invoice, grandTotal])
+
+  const updateViewportScale = useCallback(() => {
+    const shell = scaleShellRef.current
+    const node = invoiceRef.current
+    if (!shell || !node) return
+
+    const shellW = shell.getBoundingClientRect().width
+    const widthScale = shellW / INVOICE_LAYOUT_WIDTH
+    const invoiceH = node.offsetHeight || 1
+
+    let scale = Math.min(1, widthScale)
+
+    if (window.matchMedia(MOBILE_FIT_ONE_SCREEN_MQ).matches) {
+      const shellTop = shell.getBoundingClientRect().top
+      const viewportH = window.visualViewport?.height ?? window.innerHeight
+      const availableH = Math.max(160, viewportH - shellTop - 8)
+      scale = Math.min(scale, availableH / invoiceH)
+    }
+
+    setViewportScale(scale)
+    setScaledWrapHeight(invoiceH * scale)
+  }, [])
+
+  useEffect(() => {
+    const shell = scaleShellRef.current
+    const node = invoiceRef.current
+    if (!shell || !node) return undefined
+
+    updateViewportScale()
+    const observer = new ResizeObserver(updateViewportScale)
+    observer.observe(shell)
+    observer.observe(node)
+    window.addEventListener('resize', updateViewportScale)
+    window.visualViewport?.addEventListener('resize', updateViewportScale)
+    window.visualViewport?.addEventListener('scroll', updateViewportScale)
+    return () => {
+      observer.disconnect()
+      window.removeEventListener('resize', updateViewportScale)
+      window.visualViewport?.removeEventListener('resize', updateViewportScale)
+      window.visualViewport?.removeEventListener('scroll', updateViewportScale)
+    }
+  }, [invoice, upiQrDataUrl, grandTotal, updateViewportScale])
 
   const handlePrint = () => {
     const node = invoiceRef.current
@@ -122,44 +171,71 @@ function InvoicePreview({ invoice, className = '' }) {
 
   const rowCount = (invoice.rows || []).length
   const manyRows = rowCount > 4
+  const isScaledView = viewportScale < 1
 
   return (
-    <div className={className}>
-      <div className="mb-4 flex flex-col gap-3 print:hidden sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm font-semibold text-[#5f1f17]">Print किंवा PDF download करा.</p>
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={handlePrint}
-            className="rounded-xl border border-[#8f0019] bg-white px-4 py-2 text-sm font-semibold text-[#8f0019] shadow-sm transition hover:bg-[#8f0019] hover:text-white"
-          >
-            Print Invoice
-          </button>
-          <button
-            type="button"
-            onClick={handleDownloadPdf}
-            disabled={isPdfLoading}
-            className="rounded-xl bg-[#8f0019] px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:bg-[#730014] disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {isPdfLoading ? 'Preparing PDF…' : 'Download PDF'}
-          </button>
-        </div>
+    <div className={`flex min-h-0 flex-1 flex-col ${className}`}>
+      <div className="mb-2 flex shrink-0 flex-wrap gap-2 print:hidden md:mb-4">
+        <button
+          type="button"
+          onClick={handlePrint}
+          className="min-w-0 flex-1 rounded-xl border border-[#8f0019] bg-white px-3 py-2 text-xs font-semibold text-[#8f0019] shadow-sm transition hover:bg-[#8f0019] hover:text-white sm:flex-none sm:px-4 sm:text-sm"
+        >
+          Print
+        </button>
+        <button
+          type="button"
+          onClick={handleDownloadPdf}
+          disabled={isPdfLoading}
+          className="min-w-0 flex-1 rounded-xl bg-[#8f0019] px-3 py-2 text-xs font-semibold text-white shadow-md transition hover:bg-[#730014] disabled:cursor-not-allowed disabled:opacity-60 sm:flex-none sm:px-4 sm:text-sm"
+        >
+          {isPdfLoading ? 'PDF…' : 'Download PDF'}
+        </button>
       </div>
 
       <div
-        ref={invoiceRef}
-        id="invoice-print-area"
-        className={`overflow-hidden rounded-2xl border border-[#eadbcb] bg-white px-6 pb-0 shadow-lg sm:px-8 md:px-10 print:border-0 print:px-0 print:shadow-none ${manyRows ? 'invoice-many-rows' : ''}`}
+        ref={scaleShellRef}
+        className="invoice-scale-shell flex min-h-0 w-full max-w-full flex-1 items-start justify-center overflow-hidden print:overflow-visible"
       >
-        <div className="invoice-header-block border-b border-[#f0dfd4] bg-white px-0 pt-1 pb-5 font-sans md:pb-6">
+        <div
+          className="invoice-scale-viewport mx-auto print:!mx-0 print:!h-auto print:!w-full print:!max-w-full"
+          style={
+            isScaledView
+              ? {
+                  width: INVOICE_LAYOUT_WIDTH * viewportScale,
+                  height: scaledWrapHeight ?? undefined,
+                  overflow: 'hidden',
+                }
+              : { width: '100%', maxWidth: INVOICE_LAYOUT_WIDTH }
+          }
+        >
+          <div
+            className="invoice-scale-inner print:!transform-none"
+            style={
+              isScaledView
+                ? {
+                    width: INVOICE_LAYOUT_WIDTH,
+                    transform: `scale(${viewportScale})`,
+                    transformOrigin: 'top left',
+                  }
+                : { width: INVOICE_LAYOUT_WIDTH, maxWidth: '100%', margin: '0 auto' }
+            }
+          >
+            <div
+              ref={invoiceRef}
+              id="invoice-print-area"
+              className={`box-border overflow-hidden rounded-2xl border border-[#eadbcb] bg-white px-10 pb-0 shadow-lg print:border-0 print:px-0 print:shadow-none ${manyRows ? 'invoice-many-rows' : ''}`}
+              style={{ width: INVOICE_LAYOUT_WIDTH }}
+            >
+        <div className="invoice-header-block border-b border-[#f0dfd4] bg-white px-0 pt-1 pb-6 font-sans">
           <div className="flex flex-col items-center gap-2">
             <img
               src={invoice.logoDataUrl}
               alt="Company logo"
-              className="invoice-logo mx-auto block h-24 w-auto max-w-[min(100%,300px)] object-contain object-center sm:h-28"
+              className="invoice-logo mx-auto block h-28 w-auto max-w-[min(100%,300px)] object-contain object-center"
             />
             <div className="flex w-full max-w-full justify-center pb-1">
-              <p className="invoice-contact-line max-w-full px-2 text-center text-xs leading-snug text-neutral-800 text-balance sm:text-sm">
+              <p className="invoice-contact-line max-w-full px-2 text-center text-sm leading-snug text-neutral-800 text-balance">
                 <span className="font-medium">
                   {(invoice.companyPhones || []).map((phone, i) => (
                     <span key={phone}>
@@ -196,7 +272,7 @@ function InvoicePreview({ invoice, className = '' }) {
                     viewBox="0 0 24 24"
                     strokeWidth={1.75}
                     stroke="currentColor"
-                    className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#8f0019] sm:h-4 sm:w-4"
+                    className="mt-0.5 h-4 w-4 shrink-0 text-[#8f0019]"
                     aria-hidden
                   >
                     <path
@@ -223,9 +299,9 @@ function InvoicePreview({ invoice, className = '' }) {
           </div>
         </div>
 
-        <div className="invoice-details-block border-b border-neutral-200 px-0 pb-4 pt-6 font-sans md:pt-7">
-          <div className="mx-auto grid max-w-5xl gap-4 sm:grid-cols-2 sm:items-start sm:gap-6">
-            <div className="min-w-0 px-1 sm:px-2">
+        <div className="invoice-details-block border-b border-neutral-200 px-0 pb-4 pt-7 font-sans">
+          <div className="mx-auto grid max-w-5xl grid-cols-2 items-start gap-6">
+            <div className="min-w-0 px-2">
               <h3 className="invoice-section-title mb-2 text-left text-sm font-bold uppercase tracking-wide text-slate-800">
                 Invoice &amp; order
               </h3>
@@ -281,7 +357,7 @@ function InvoicePreview({ invoice, className = '' }) {
               </div>
             </div>
 
-            <div className="min-w-0 px-1 sm:px-2">
+            <div className="min-w-0 px-2">
               <h3 className="invoice-section-title mb-2 text-left text-sm font-bold uppercase tracking-wide text-slate-800">
                 Bill to
               </h3>
@@ -324,33 +400,33 @@ function InvoicePreview({ invoice, className = '' }) {
           </div>
         </div>
 
-        <div className="invoice-products-block px-0 py-5 md:py-6">
+        <div className="invoice-products-block px-0 py-6">
           <h3 className="invoice-products-title mb-3 border-l-4 border-[#8f0019] pl-3 font-serif text-sm font-bold uppercase tracking-wider text-[#6f1b1d]">
             PRODUCTS
           </h3>
-          <div className="overflow-x-auto rounded-lg border border-[#eadbcb]">
-            <table className="invoice-table w-full min-w-0 border-collapse text-left text-sm">
+          <div className="rounded-lg border border-[#eadbcb]">
+            <table className="invoice-table w-full border-collapse text-left text-sm">
               <thead>
                 <tr className="bg-[#5f1f17] text-[#fdf7ef]">
-                  <th className="rounded-tl-lg px-2 py-1.5 font-semibold sm:px-3 sm:py-2">Sr No.</th>
-                  <th className="px-2 py-1.5 font-semibold sm:px-3 sm:py-2">Product Name</th>
-                  <th className="px-2 py-1.5 font-semibold sm:px-3 sm:py-2">Category</th>
-                  <th className="px-2 py-1.5 font-semibold sm:px-3 sm:py-2">MRP</th>
-                  <th className="px-2 py-1.5 font-semibold sm:px-3 sm:py-2">Discounted Price</th>
-                  <th className="rounded-tr-lg px-2 py-1.5 font-semibold sm:px-3 sm:py-2">Total</th>
+                  <th className="rounded-tl-lg px-3 py-2 font-semibold">Sr No.</th>
+                  <th className="px-3 py-2 font-semibold">Product Name</th>
+                  <th className="px-3 py-2 font-semibold">Category</th>
+                  <th className="px-3 py-2 font-semibold">MRP</th>
+                  <th className="px-3 py-2 font-semibold">Discounted Price</th>
+                  <th className="rounded-tr-lg px-3 py-2 font-semibold">Total</th>
                 </tr>
               </thead>
               <tbody>
                 {(invoice.rows || []).map((row, index) => (
                   <tr key={row.id || index} className="border-b border-[#f0dfd4] bg-white">
-                    <td className="px-2 py-1.5 text-[#7a5b4f] sm:px-3 sm:py-2">{index + 1}</td>
-                    <td className="px-2 py-1.5 font-medium text-[#5f1f17] sm:px-3 sm:py-2">{row.name}</td>
-                    <td className="px-2 py-1.5 text-[#6e4f43] sm:px-3 sm:py-2">{row.category || '—'}</td>
-                    <td className="px-2 py-1.5 font-mono text-[#6e4f43] sm:px-3 sm:py-2">{formatRupeeCell(row.mrp)}</td>
-                    <td className="px-2 py-1.5 font-mono text-[#6e4f43] sm:px-3 sm:py-2">
+                    <td className="px-3 py-2 text-[#7a5b4f]">{index + 1}</td>
+                    <td className="px-3 py-2 font-medium text-[#5f1f17]">{row.name}</td>
+                    <td className="px-3 py-2 text-[#6e4f43]">{row.category || '—'}</td>
+                    <td className="px-3 py-2 font-mono text-[#6e4f43]">{formatRupeeCell(row.mrp)}</td>
+                    <td className="px-3 py-2 font-mono text-[#6e4f43]">
                       {formatRupeeCell(row.discountedPrice)}
                     </td>
-                    <td className="px-2 py-1.5 font-mono font-semibold text-[#5f1f17] sm:px-3 sm:py-2">
+                    <td className="px-3 py-2 font-mono font-semibold text-[#5f1f17]">
                       {formatRupeeCell(row.discountedPrice)}
                     </td>
                   </tr>
@@ -360,34 +436,34 @@ function InvoicePreview({ invoice, className = '' }) {
           </div>
         </div>
 
-        <div className="invoice-totals-block border-t border-[#f0dfd4] bg-white px-0 py-5 md:py-6">
+        <div className="invoice-totals-block border-t border-[#f0dfd4] bg-white px-0 py-6">
           <div
             className={`mx-auto flex gap-6 ${
               upiQrDataUrl
-                ? 'max-w-3xl flex-col sm:flex-row sm:items-start sm:justify-between'
-                : 'max-w-lg flex-col sm:ml-auto'
+                ? 'max-w-3xl flex-row items-start justify-between'
+                : 'max-w-lg flex-row justify-end'
             }`}
           >
             {upiQrDataUrl ? (
-              <div className="flex shrink-0 flex-col items-center sm:items-start">
-                <p className="invoice-qr-label mb-1 text-[10px] font-medium text-[#6e4f43] sm:text-xs">
+              <div className="flex shrink-0 flex-col items-start">
+                <p className="invoice-qr-label mb-1 text-xs font-medium text-[#6e4f43]">
                   UPI — Pay exact amount
                 </p>
                 <img
                   src={upiQrDataUrl}
                   alt="UPI payment QR for Grand Total"
-                  className="invoice-qr-img h-32 w-32 sm:h-40 sm:w-40"
+                  className="invoice-qr-img h-40 w-40"
                   width={160}
                   height={160}
                 />
-                <p className="mt-2 max-w-[220px] break-all text-center font-mono text-xs text-[#5f1f17] sm:text-left">
+                <p className="mt-2 max-w-[220px] break-all text-left font-mono text-xs text-[#5f1f17]">
                   ₹{formatCurrency(grandTotal)} · {invoice.upiId?.trim()}
                 </p>
               </div>
             ) : null}
             <div
-              className={`invoice-totals-card rounded-xl border border-[#eadbcb] bg-white p-3 shadow-sm sm:p-4 ${
-                upiQrDataUrl ? 'w-full min-w-0 sm:ml-auto sm:w-[min(100%,280px)] sm:shrink-0' : 'w-full'
+              className={`invoice-totals-card rounded-xl border border-[#eadbcb] bg-white p-4 shadow-sm ${
+                upiQrDataUrl ? 'ml-auto w-[min(100%,280px)] shrink-0' : 'w-full'
               }`}
             >
               <div className="space-y-3">
@@ -410,11 +486,11 @@ function InvoicePreview({ invoice, className = '' }) {
           </div>
         </div>
 
-        <footer className="invoice-footer-block border-t border-[#7a251b] bg-gradient-to-r from-[#8f0019] to-[#5f1f17] px-0 py-2.5 text-center sm:py-3">
+        <footer className="invoice-footer-block border-t border-[#7a251b] bg-gradient-to-r from-[#8f0019] to-[#5f1f17] px-0 py-3 text-center">
           <p className="text-sm font-semibold leading-snug tracking-wide text-[#f8e7dc]">
             Thank You For Your Purchase
           </p>
-          <p className="mt-1 text-xs leading-snug text-[#f4d3c5] sm:text-sm">
+          <p className="mt-1 text-sm leading-snug text-[#f4d3c5]">
             <a
               href={COMPANY_WEBSITE_HREF}
               target="_blank"
@@ -425,7 +501,10 @@ function InvoicePreview({ invoice, className = '' }) {
             </a>
           </p>
         </footer>
-        <div className="invoice-footer-spacer h-6 bg-white sm:h-8" aria-hidden />
+        <div className="invoice-footer-spacer h-8 bg-white" aria-hidden />
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   )

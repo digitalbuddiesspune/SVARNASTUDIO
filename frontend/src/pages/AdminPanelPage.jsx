@@ -182,6 +182,43 @@ const ADMIN_NAV_ITEMS = [
   { id: 'invoices-all', label: 'All Invoices', Icon: IconList },
 ]
 
+function AdminSidebarNav({ activeSection, onSelectSection, onLogout, showSubtitle = true }) {
+  return (
+    <>
+      {showSubtitle ? (
+        <p className="text-xs text-[#7a5b4f]">Manage products and catalog.</p>
+      ) : null}
+      <nav className={`flex flex-col gap-2 ${showSubtitle ? 'mt-4 lg:flex-1' : 'mt-2'}`}>
+        {ADMIN_NAV_ITEMS.map(({ id, label, Icon }) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => onSelectSection(id)}
+            className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm font-semibold transition ${
+              activeSection === id
+                ? 'bg-[#8f0019] text-white'
+                : 'bg-[#f8efe7] text-[#5f1f17] hover:bg-[#f2dfd1]'
+            }`}
+          >
+            <Icon className="h-4 w-4 shrink-0" />
+            {label}
+          </button>
+        ))}
+      </nav>
+      <button
+        type="button"
+        onClick={onLogout}
+        className={`flex w-full items-center justify-center gap-2 rounded-lg border border-[#8f0019] px-4 py-2 text-sm font-semibold text-[#8f0019] transition hover:bg-[#8f0019] hover:text-white ${
+          showSubtitle ? 'mt-4 lg:mt-auto' : 'mt-4'
+        }`}
+      >
+        <IconLogout className="h-4 w-4" />
+        Logout
+      </button>
+    </>
+  )
+}
+
 function AdminPanelPage() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -195,6 +232,7 @@ function AdminPanelPage() {
   const [loading, setLoading] = useState(true)
   const [dashboardStats, setDashboardStats] = useState({ orderCount: 0, totalRevenue: 0 })
   const [dashboardStatsLoading, setDashboardStatsLoading] = useState(true)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const subCategoryOptions = useMemo(() => {
     return categoryOptions.find((item) => item.category === form.category)?.subCategories || []
   }, [form.category])
@@ -253,6 +291,29 @@ function AdminPanelPage() {
       fetchDashboardStats()
     }
   }, [activeSection])
+
+  useEffect(() => {
+    if (!mobileMenuOpen) return undefined
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = prevOverflow
+    }
+  }, [mobileMenuOpen])
+
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)')
+    const closeOnDesktop = () => {
+      if (mq.matches) setMobileMenuOpen(false)
+    }
+    mq.addEventListener('change', closeOnDesktop)
+    return () => mq.removeEventListener('change', closeOnDesktop)
+  }, [])
+
+  const selectSection = (id) => {
+    setActiveSection(id)
+    setMobileMenuOpen(false)
+  }
 
   useEffect(() => {
     if (!subCategoryOptions.includes(form.subCategory)) {
@@ -410,41 +471,77 @@ function AdminPanelPage() {
   const totalCategories = new Set(products.map((product) => product.category).filter(Boolean)).size
 
   return (
-    <main className="flex min-h-screen flex-col bg-[#faf7ec] px-4 py-4 md:px-6 lg:h-screen lg:max-h-screen lg:overflow-hidden">
-      <section className="mx-auto flex h-full min-h-0 w-full max-w-7xl flex-1 flex-col gap-5 lg:grid lg:grid-cols-[minmax(200px,22%)_minmax(0,1fr)] lg:items-stretch">
-        <aside className={`print:hidden flex w-full self-stretch ${ADMIN_SIDEBAR_CARD}`}>
-          <h1 className="font-serif text-2xl text-[#5f1f17]">Admin Panel</h1>
-          <p className="mt-1 text-xs text-[#7a5b4f]">Manage products and catalog.</p>
+    <main className="flex min-h-screen flex-col overflow-x-hidden bg-[#faf7ec] px-4 py-4 md:px-6 lg:h-screen lg:max-h-screen lg:overflow-hidden">
+      {/* Mobile top bar — heading + menu button */}
+      <header className="print:hidden sticky top-0 z-40 -mx-4 mb-4 flex items-center justify-between gap-3 border-b border-[#eadbcb] bg-[#faf7ec]/95 px-4 py-3 backdrop-blur-sm lg:hidden">
+        <h1 className="font-serif text-xl font-semibold text-[#5f1f17] sm:text-2xl">Admin Panel</h1>
+        <button
+          type="button"
+          onClick={() => setMobileMenuOpen((open) => !open)}
+          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[#ddc9b5] bg-white text-[#5f1f17] shadow-sm transition hover:bg-[#f8efe7]"
+          aria-expanded={mobileMenuOpen}
+          aria-controls="admin-mobile-menu"
+          aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+        >
+          {mobileMenuOpen ? (
+            <AdminIcon className="h-5 w-5">
+              <path d="M6 6l12 12M18 6L6 18" />
+            </AdminIcon>
+          ) : (
+            <AdminIcon className="h-5 w-5">
+              <path d="M4 7h16M4 12h16M4 17h16" />
+            </AdminIcon>
+          )}
+        </button>
+      </header>
 
-          <nav className="mt-4 flex flex-col gap-2 lg:flex-1">
-            {ADMIN_NAV_ITEMS.map(({ id, label, Icon }) => (
-              <button
-                key={id}
-                type="button"
-                onClick={() => setActiveSection(id)}
-                className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm font-semibold transition ${
-                  activeSection === id
-                    ? 'bg-[#8f0019] text-white'
-                    : 'bg-[#f8efe7] text-[#5f1f17] hover:bg-[#f2dfd1]'
-                }`}
-              >
-                <Icon className="h-4 w-4 shrink-0" />
-                {label}
-              </button>
-            ))}
-          </nav>
-
+      {/* Mobile slide-out menu */}
+      {mobileMenuOpen ? (
+        <div className="print:hidden fixed inset-0 z-50 lg:hidden" role="presentation">
           <button
             type="button"
-            onClick={handleLogout}
-            className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-[#8f0019] px-4 py-2 text-sm font-semibold text-[#8f0019] transition hover:bg-[#8f0019] hover:text-white lg:mt-auto"
+            className="absolute inset-0 bg-[#2a1810]/40"
+            aria-label="Close menu"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+          <aside
+            id="admin-mobile-menu"
+            className={`absolute left-0 top-0 flex h-full w-[min(100%,280px)] flex-col ${ADMIN_SIDEBAR_CARD} rounded-none rounded-r-2xl shadow-xl`}
           >
-            <IconLogout className="h-4 w-4" />
-            Logout
-          </button>
+            <div className="mb-2 flex items-center justify-between gap-2 border-b border-[#f0dfd4] pb-3">
+              <h2 className="font-serif text-lg font-semibold text-[#5f1f17]">Menu</h2>
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen(false)}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[#5f1f17] hover:bg-[#f8efe7]"
+                aria-label="Close menu"
+              >
+                <AdminIcon className="h-5 w-5">
+                  <path d="M6 6l12 12M18 6L6 18" />
+                </AdminIcon>
+              </button>
+            </div>
+            <AdminSidebarNav
+              activeSection={activeSection}
+              onSelectSection={selectSection}
+              onLogout={handleLogout}
+              showSubtitle={false}
+            />
+          </aside>
+        </div>
+      ) : null}
+
+      <section className="mx-auto flex h-full min-h-0 w-full max-w-7xl flex-1 flex-col gap-5 lg:grid lg:grid-cols-[minmax(200px,22%)_minmax(0,1fr)] lg:items-stretch">
+        <aside className={`print:hidden hidden w-full self-stretch lg:flex ${ADMIN_SIDEBAR_CARD}`}>
+          <h1 className="font-serif text-2xl text-[#5f1f17]">Admin Panel</h1>
+          <AdminSidebarNav
+            activeSection={activeSection}
+            onSelectSection={selectSection}
+            onLogout={handleLogout}
+          />
         </aside>
 
-        <div className="flex h-full min-h-0 flex-1 flex-col self-stretch print:max-w-none lg:min-w-0">
+        <div className="flex h-full min-h-0 min-w-0 max-w-full flex-1 flex-col self-stretch overflow-x-hidden print:max-w-none lg:min-w-0">
           {activeSection === 'invoice' && (
             <InvoiceGenerator className="min-h-0 flex-1 shadow-sm" />
           )}

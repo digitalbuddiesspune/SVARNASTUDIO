@@ -27,12 +27,46 @@ function formatInvoiceDateTime(d) {
   });
 }
 
+/**
+ * Year span in invoice no: current YY + next YY (e.g. 2026 → "2627", 2027 → "2728").
+ * Full number: INV-262701 = INV + 2627 + 01.
+ */
+function getInvoiceYearKey(date = new Date()) {
+  const yy = date.getFullYear() % 100;
+  const nextYy = (yy + 1) % 100;
+  return `${String(yy).padStart(2, "0")}${String(nextYy).padStart(2, "0")}`;
+}
+
+function formatInvoiceNumber(yearKey, seqInYear) {
+  return `INV-${yearKey}${String(seqInYear).padStart(2, "0")}`;
+}
+
+async function getNextSeqInYear(yearKey) {
+  const prefix = `INV-${yearKey}`;
+  const lastInYear = await Invoice.findOne({
+    invoiceNumber: { $regex: `^${prefix}\\d{2}$` },
+  })
+    .sort({ invoiceSeq: -1 })
+    .select("invoiceNumber");
+
+  if (!lastInYear?.invoiceNumber) return 1;
+
+  const match = String(lastInYear.invoiceNumber).match(/(\d{2})$/);
+  const prev = match ? parseInt(match[1], 10) : 0;
+  return Number.isFinite(prev) && prev >= 0 ? prev + 1 : 1;
+}
+
 async function getNextInvoiceNumber() {
-  const last = await Invoice.findOne().sort({ invoiceSeq: -1 }).select("invoiceSeq");
-  const nextSeq = (last?.invoiceSeq ?? 0) + 1;
+  const yearKey = getInvoiceYearKey();
+  const nextSeqInYear = await getNextSeqInYear(yearKey);
+
+  const lastGlobal = await Invoice.findOne().sort({ invoiceSeq: -1 }).select("invoiceSeq");
+  const nextGlobalSeq = (lastGlobal?.invoiceSeq ?? 0) + 1;
+
   return {
-    invoiceSeq: nextSeq,
-    invoiceNumber: `INV-${String(nextSeq).padStart(2, "0")}`,
+    invoiceSeq: nextGlobalSeq,
+    invoiceNumber: formatInvoiceNumber(yearKey, nextSeqInYear),
+    orderNo: String(nextSeqInYear).padStart(2, "0"),
   };
 }
 
@@ -62,7 +96,7 @@ function computeTotals(lineItems) {
   return { subtotal, gstAmount, grandTotal };
 }
 
-function buildInvoicePayload(body, { invoiceSeq, invoiceNumber, isUpdate = false }) {
+function buildInvoicePayload(body, { invoiceSeq, invoiceNumber, orderNo, isUpdate = false }) {
   const lineItems = normalizeLineItems(body.lineItems || body.rows || []);
   if (lineItems.length === 0) {
     const err = new Error("At least one product with a name is required");
@@ -102,7 +136,9 @@ function buildInvoicePayload(body, { invoiceSeq, invoiceNumber, isUpdate = false
     customerEmail: String(body.customerEmail || "").trim(),
     customerPhone: String(body.customerPhone || "").trim(),
     customerAddress: String(body.customerAddress || "").trim(),
-    orderNo: String(body.orderNo || "").trim(),
+    orderNo: isUpdate
+      ? String(body.orderNo || "").trim()
+      : String(orderNo || body.orderNo || "").trim(),
     orderDate,
     orderDateDisplay,
     orderStatus: String(body.orderStatus || "").trim(),
@@ -147,8 +183,13 @@ export function invoiceToClientShape(doc) {
     paymentStatus: d.paymentStatus?.trim() ? d.paymentStatus : "—",
     paymentMode: d.paymentMode?.trim() ? d.paymentMode : "—",
     upiId: d.upiId || "",
+    orderDateInput:
+      d.orderDate && !Number.isNaN(new Date(d.orderDate).getTime())
+        ? new Date(d.orderDate).toISOString().slice(0, 16)
+        : "",
     rows: (d.lineItems || []).map((row, index) => ({
       id: row.lineId || `row-${index}`,
+      productId: row.productId ? String(row.productId) : "",
       name: row.name,
       category: row.category || "",
       mrp: row.mrp,
@@ -161,6 +202,16 @@ export function invoiceToClientShape(doc) {
     updatedAt: d.updatedAt,
   };
 }
+
+/** Next invoice number & order no for the create form (does not reserve a number). */
+export const getNextInvoicePreview = async (_req, res) => {
+  if (mongoose.connection.readyState !== 1) {
+    return res.status(503).json({ message: "Database not connected. Cannot preview next invoice." });
+  }
+
+  const { invoiceNumber, orderNo } = await getNextInvoiceNumber();
+  return res.json({ invoiceNumber, orderNo });
+};
 
 export const getInvoices = async (_req, res) => {
   if (mongoose.connection.readyState !== 1) {
@@ -233,8 +284,8 @@ export const createInvoice = async (req, res) => {
   }
 
   try {
-    const { invoiceSeq, invoiceNumber } = await getNextInvoiceNumber();
-    const payload = buildInvoicePayload(req.body, { invoiceSeq, invoiceNumber });
+    const { invoiceSeq, invoiceNumber, orderNo } = await getNextInvoiceNumber();
+    const payload = buildInvoicePayload(req.body, { invoiceSeq, invoiceNumber, orderNo });
     const created = await Invoice.create(payload);
     await Revenue.syncFromInvoice(created);
     return res.status(201).json(invoiceToClientShape(created));

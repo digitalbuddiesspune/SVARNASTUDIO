@@ -63,34 +63,32 @@ function AdminInvoicePage({ lookup = 'invoice' }) {
       : decodeURIComponent(params.invoiceNumber || '')
 
   return (
-    <main className="invoice-page-shell min-h-screen bg-[#faf7ec] px-4 py-4 md:px-6 lg:py-6">
-      <div className="mx-auto w-full max-w-5xl">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 print:hidden">
-          <div>
-            <Link
-              to="/admin/panel"
-              className="text-sm font-semibold text-[#8f0019] hover:underline"
-              onClick={(e) => {
-                e.preventDefault()
-                navigate('/admin/panel', { state: { section: 'invoice' } })
-              }}
-            >
-              ← Back to Invoice Generator
-            </Link>
-            <h1 className="mt-2 font-serif text-2xl text-[#5f1f17] md:text-3xl">
-              Invoice {title}
-            </h1>
-          </div>
+    <main className="invoice-page-shell flex min-h-dvh flex-col overflow-hidden bg-[#faf7ec] px-3 py-2 md:min-h-screen md:px-6 md:py-6">
+      <div className="mx-auto flex w-full min-h-0 max-w-5xl flex-1 flex-col">
+        <div className="mb-2 flex shrink-0 flex-wrap items-center justify-between gap-2 print:hidden md:mb-4">
+          <Link
+            to="/admin/panel"
+            className="text-xs font-semibold text-[#8f0019] hover:underline md:text-sm"
+            onClick={(e) => {
+              e.preventDefault()
+              navigate('/admin/panel', { state: { section: 'invoice' } })
+            }}
+          >
+            ← Back
+          </Link>
+          <h1 className="font-serif text-base font-semibold text-[#5f1f17] md:text-2xl">
+            {title}
+          </h1>
           <Link
             to="/admin/panel"
             state={{ section: 'invoices-all' }}
-            className="rounded-lg border border-[#8f0019] px-3 py-1.5 text-sm font-semibold text-[#8f0019] hover:bg-[#8f0019] hover:text-white"
+            className="rounded-lg border border-[#8f0019] px-2 py-1 text-xs font-semibold text-[#8f0019] hover:bg-[#8f0019] hover:text-white md:px-3 md:py-1.5 md:text-sm"
             onClick={(e) => {
               e.preventDefault()
               navigate('/admin/panel', { state: { section: 'invoices-all' } })
             }}
           >
-            All Invoices
+            All
           </Link>
         </div>
 
@@ -103,8 +101,8 @@ function AdminInvoicePage({ lookup = 'invoice' }) {
             {error}
           </p>
         ) : (
-          <section className="invoice-preview-wrap">
-            <InvoicePreview invoice={invoice} />
+          <section className="invoice-preview-wrap flex min-h-0 flex-1 flex-col overflow-hidden">
+            <InvoicePreview invoice={invoice} className="min-h-0 flex-1" />
           </section>
         )}
       </div>

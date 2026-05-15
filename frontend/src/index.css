@@ -51,6 +51,33 @@ body {
   }
 }
 
+/* Mobile: same desktop layout, scaled to fit one screen (no page scroll) */
+.invoice-preview-wrap {
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+@media (max-width: 767px) {
+  .invoice-page-shell {
+    height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden;
+  }
+}
+
+@media print {
+  .invoice-scale-shell,
+  .invoice-scale-viewport,
+  .invoice-scale-inner {
+    width: 100% !important;
+    height: auto !important;
+    max-width: 100% !important;
+    overflow: visible !important;
+    transform: none !important;
+  }
+}
+
 /* Print + PDF: natural flow (no min-height gap), larger readable type */
 @media print {
   #invoice-print-area,

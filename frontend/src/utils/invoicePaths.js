@@ -1,3 +1,12 @@
+/** Admin route to edit a saved invoice by database id. */
+export function invoiceEditPath(invoiceOrId) {
+  const id =
+    typeof invoiceOrId === 'string'
+      ? invoiceOrId
+      : String(invoiceOrId?._id || invoiceOrId?.id || '')
+  return `/admin/invoice/edit/${encodeURIComponent(id)}`
+}
+
 /** Admin route to view a saved invoice (prefers order no when set). */
 export function invoiceViewPath(invoice) {
   const orderNo = String(invoice?.orderNo || '').trim()

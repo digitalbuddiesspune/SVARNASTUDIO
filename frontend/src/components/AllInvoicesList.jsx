@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { invoiceViewPath } from '../utils/invoicePaths'
+import { invoiceEditPath, invoiceViewPath } from '../utils/invoicePaths'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
 
@@ -39,6 +39,7 @@ function AllInvoicesList({ className = '' }) {
   const [records, setRecords] = useState([])
   const [loading, setLoading] = useState(true)
   const [listError, setListError] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
 
   const refresh = useCallback(async () => {
     setLoading(true)
@@ -70,6 +71,26 @@ function AllInvoicesList({ className = '' }) {
     return [...records].sort((a, b) => String(b.savedAt).localeCompare(String(a.savedAt)))
   }, [records])
 
+  const filtered = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase()
+    if (!q) return sorted
+    return sorted.filter((rec) => {
+      const inv = rec.invoice || {}
+      const haystack = [
+        inv.invoiceNumber,
+        inv.orderNo,
+        inv.customerName,
+        inv.customerPhone,
+        inv.customerEmail,
+        formatSavedAt(rec.savedAt),
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+      return haystack.includes(q)
+    })
+  }, [sorted, searchQuery])
+
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this invoice from the database?')) return
     try {
@@ -88,14 +109,38 @@ function AllInvoicesList({ className = '' }) {
     navigate(invoiceViewPath(inv))
   }
 
+  const handleEdit = (rec) => {
+    navigate(invoiceEditPath(rec.id))
+  }
+
   return (
     <section
-      className={`flex h-full min-h-0 flex-col rounded-2xl border border-[#eadbcb] bg-white p-4 shadow-sm md:p-6 ${className}`}
+      className={`flex min-h-0 flex-col overflow-x-hidden rounded-2xl border border-[#eadbcb] bg-white p-4 shadow-sm md:h-full md:overflow-hidden md:p-6 ${className}`}
     >
       <div className="shrink-0">
-        <h2 className="font-serif text-2xl text-[#6f1c15]">All Invoices</h2>
-        <p className="mt-1 text-sm text-[#7a5b4f]">
-          Generated invoices are saved in the database. Use <strong>Details</strong> to open the full
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="min-w-0 shrink font-serif text-xl text-[#6f1c15] md:text-2xl">All Invoices</h2>
+          {!loading && !listError ? (
+            <div className="w-[min(100%,11rem)] shrink-0 sm:w-52 md:w-60">
+              <label htmlFor="invoice-list-search" className="sr-only">
+                Search invoices
+              </label>
+              <input
+                id="invoice-list-search"
+                type="search"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search invoice, customer…"
+                className="w-full rounded-lg border border-[#ddc9b5] bg-white px-3 py-2 text-sm text-[#4d2018] shadow-sm outline-none transition placeholder:text-[#a88b7a] focus:border-[#8f0019] focus:ring-2 focus:ring-[#8f0019]/20"
+                autoComplete="off"
+                spellCheck={false}
+              />
+            </div>
+          ) : null}
+        </div>
+        <p className="mt-1 hidden text-sm text-[#7a5b4f] md:block">
+          Generated invoices are saved in the database. Use <strong>Details</strong> to view or{' '}
+          <strong>Edit</strong> to change an invoice.
           invoice view (print / PDF).
         </p>
       </div>
@@ -110,9 +155,67 @@ function AllInvoicesList({ className = '' }) {
         <p className="mt-6 shrink-0 rounded-lg border border-dashed border-[#ddc9b5] bg-[#fdfcfa] px-4 py-8 text-center text-sm text-[#7a5b4f]">
           No invoices saved yet. Generate an invoice and it will appear here.
         </p>
+      ) : filtered.length === 0 ? (
+        <p className="mt-4 shrink-0 rounded-lg border border-dashed border-[#ddc9b5] bg-[#fdfcfa] px-4 py-8 text-center text-sm text-[#7a5b4f]">
+          No invoices match &quot;{searchQuery.trim()}&quot;.
+        </p>
       ) : (
-        <div className="scrollbar-hide mt-4 min-h-0 flex-1 overflow-x-auto overflow-y-auto overscroll-contain">
-          <table className="w-full min-w-[640px] border-collapse text-left text-sm">
+        <>
+          <ul className="mt-3 flex flex-col gap-2 md:hidden">
+            {filtered.map((rec) => {
+              const inv = rec.invoice || {}
+              const total = grandTotalFromInvoice(inv)
+              return (
+                <li
+                  key={rec.id}
+                  className="rounded-xl border border-[#eadbcb] bg-[#fdfcfa] p-3"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="font-semibold tabular-nums text-[#8f0019]">
+                        {inv.invoiceNumber || '—'}
+                      </p>
+                      <p className="mt-0.5 truncate text-sm font-medium text-[#5f1f17]">
+                        {inv.customerName || '—'}
+                      </p>
+                      <p className="mt-0.5 text-xs text-[#6e4f43]">
+                        {inv.customerPhone || '—'} · {formatSavedAt(rec.savedAt)}
+                      </p>
+                    </div>
+                    <p className="shrink-0 font-mono text-sm font-semibold text-[#5f1f17]">
+                      ₹{formatCurrency(total)}
+                    </p>
+                  </div>
+                  <div className="mt-2 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleDetails(inv)}
+                      className="flex-1 rounded-md bg-[#f2e1d6] px-2 py-1.5 text-xs font-semibold text-[#5f1f17]"
+                    >
+                      Details
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleEdit(rec)}
+                      className="flex-1 rounded-md bg-[#e8f0e8] px-2 py-1.5 text-xs font-semibold text-[#2d5a2d]"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(rec.id)}
+                      className="flex-1 rounded-md bg-[#ffe0e0] px-2 py-1.5 text-xs font-semibold text-[#8f0019]"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </li>
+              )
+            })}
+          </ul>
+
+          <div className="scrollbar-hide mt-4 hidden min-h-0 flex-1 overflow-y-auto overscroll-contain md:block">
+          <table className="w-full border-collapse text-left text-sm">
             <thead>
               <tr className="border-b border-[#eadbcb] bg-[#f8efe7] text-[#5f1f17]">
                 <th className="px-3 py-2 font-semibold">Saved</th>
@@ -124,7 +227,7 @@ function AllInvoicesList({ className = '' }) {
               </tr>
             </thead>
             <tbody>
-              {sorted.map((rec) => {
+              {filtered.map((rec) => {
                 const inv = rec.invoice || {}
                 const total = grandTotalFromInvoice(inv)
                 return (
@@ -149,6 +252,13 @@ function AllInvoicesList({ className = '' }) {
                         </button>
                         <button
                           type="button"
+                          onClick={() => handleEdit(rec)}
+                          className="rounded-md bg-[#e8f0e8] px-2 py-1 text-xs font-semibold text-[#2d5a2d]"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
                           onClick={() => handleDelete(rec.id)}
                           className="rounded-md bg-[#ffe0e0] px-2 py-1 text-xs font-semibold text-[#8f0019]"
                         >
@@ -161,7 +271,8 @@ function AllInvoicesList({ className = '' }) {
               })}
             </tbody>
           </table>
-        </div>
+          </div>
+        </>
       )}
     </section>
   )

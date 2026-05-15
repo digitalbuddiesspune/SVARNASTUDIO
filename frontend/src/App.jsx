@@ -3,6 +3,7 @@ import AboutUsPage from './pages/AboutUsPage'
 import AdminLoginPage from './pages/AdminLoginPage'
 import AdminPanelPage from './pages/AdminPanelPage'
 import AdminInvoicePage from './pages/AdminInvoicePage'
+import AdminInvoiceEditPage from './pages/AdminInvoiceEditPage'
 import ContactUsPage from './pages/ContactUsPage'
 import HomePage from './pages/HomePage'
 import ProductDetailPage from './pages/ProductDetailPage'
@@ -29,6 +30,7 @@ function App() {
         <Route path="/contact" element={<ContactUsPage />} />
         <Route path="/admin" element={<AdminLoginPage />} />
         <Route path="/admin/panel" element={<AdminPanelPage />} />
+        <Route path="/admin/invoice/edit/:id" element={<AdminInvoiceEditPage />} />
         <Route path="/admin/invoice/order/:orderNo" element={<AdminInvoicePage lookup="order" />} />
         <Route path="/admin/invoice/:invoiceNumber" element={<AdminInvoicePage lookup="invoice" />} />
       </Routes>
