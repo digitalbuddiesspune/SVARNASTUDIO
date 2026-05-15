@@ -17,6 +17,8 @@ const COMPANY_ADDRESS = COMPANY_ADDRESS_LINES.join('\n')
 
 const DEFAULT_COMPANY_NAME = 'Svarna Studio'
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
+
 /** Browser-persisted sequence: first invoice `INV-01`, then `INV-02`, … */
 const INVOICE_SEQ_STORAGE_KEY = 'svarna_invoice_sequence'
 
@@ -42,11 +44,20 @@ const createRowId = () =>
 
 const createEmptyRow = () => ({
   id: createRowId(),
+  /** Set when a row picks from catalog; used for select value only (not stored on invoice). */
+  productId: '',
   name: '',
   category: '',
   mrp: '',
   discountedPrice: '',
 })
+
+function invoiceCategoryFromProduct(p) {
+  const cat = String(p?.category || '').trim()
+  const sub = String(p?.subCategory || '').trim()
+  if (cat && sub) return `${cat} — ${sub}`
+  return cat || sub || ''
+}
 
 function formatInvoiceDateTime(d) {
   if (!(d instanceof Date) || Number.isNaN(d.getTime())) return '—'
@@ -103,6 +114,68 @@ function InvoiceGenerator({ openInvoiceRequest = null }) {
   const [formError, setFormError] = useState('')
   const [isPdfLoading, setIsPdfLoading] = useState(false)
   const [upiQrDataUrl, setUpiQrDataUrl] = useState('')
+  const [catalogProducts, setCatalogProducts] = useState([])
+  const [catalogStatus, setCatalogStatus] = useState('loading')
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/products`)
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        const data = await res.json()
+        if (cancelled) return
+        setCatalogProducts(Array.isArray(data) ? data : [])
+        setCatalogStatus('ok')
+      } catch (e) {
+        console.error('Invoice catalog', e)
+        if (!cancelled) {
+          setCatalogProducts([])
+          setCatalogStatus('error')
+        }
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const catalogSorted = useMemo(
+    () =>
+      [...catalogProducts].sort((a, b) =>
+        String(a.productName || '').localeCompare(String(b.productName || ''), undefined, {
+          sensitivity: 'base',
+        }),
+      ),
+    [catalogProducts],
+  )
+
+  const applyCatalogSelection = useCallback((rowId, productId) => {
+    setDraft((prev) => ({
+      ...prev,
+      rows: prev.rows.map((row) => {
+        if (row.id !== rowId) return row
+        if (!productId) {
+          return { ...row, productId: '', name: '', category: '', mrp: '', discountedPrice: '' }
+        }
+        const p = catalogProducts.find((x) => String(x._id) === String(productId))
+        if (!p) {
+          return { ...row, productId: '', name: '', category: '', mrp: '', discountedPrice: '' }
+        }
+        const mrp = p.price?.mrp
+        const disc = p.price?.discountedPrice ?? mrp
+        return {
+          ...row,
+          productId: String(p._id),
+          name: String(p.productName || '').trim(),
+          category: invoiceCategoryFromProduct(p),
+          mrp: mrp != null && Number.isFinite(Number(mrp)) ? String(mrp) : '',
+          discountedPrice:
+            disc != null && Number.isFinite(Number(disc)) ? String(disc) : '',
+        }
+      }),
+    }))
+  }, [catalogProducts])
 
   useEffect(() => {
     if (!openInvoiceRequest?.invoice) return
@@ -440,6 +513,15 @@ function InvoiceGenerator({ openInvoiceRequest = null }) {
                   + Add Product Row
                 </button>
               </div>
+              {catalogStatus === 'loading' && (
+                <p className="mb-2 text-xs text-[#7a5b4f]">प्रॉडक्ट लिस्ट लोड होत आहे… / Loading product list…</p>
+              )}
+              {catalogStatus === 'error' && (
+                <p className="mb-2 text-xs text-red-700">
+                  प्रॉडक्ट लिस्ट मिळाली नाही (API तपासा). / Could not load products — check backend /{' '}
+                  <code className="rounded bg-red-50 px-1">VITE_API_BASE_URL</code>.
+                </p>
+              )}
               <div className="overflow-x-auto rounded-xl border border-[#eadbcb]">
                 <table className="w-full min-w-[720px] border-collapse text-left text-sm">
                   <thead>
@@ -459,14 +541,29 @@ function InvoiceGenerator({ openInvoiceRequest = null }) {
                       return (
                         <tr key={row.id} className="border-t border-[#f0dfd4]">
                           <td className="px-3 py-2 align-top text-[#7a5b4f]">{index + 1}</td>
-                          <td className="px-3 py-2 align-top">
-                            <input
-                              type="text"
-                              value={row.name}
-                              onChange={(e) => updateDraftRow(row.id, 'name', e.target.value)}
-                              className={formInputClass}
-                              placeholder="Product name"
-                            />
+                          <td className="min-w-[14rem] px-3 py-2 align-top">
+                            <select
+                              value={
+                                row.productId &&
+                                catalogProducts.some((p) => String(p._id) === String(row.productId))
+                                  ? String(row.productId)
+                                  : ''
+                              }
+                              onChange={(e) => applyCatalogSelection(row.id, e.target.value)}
+                              disabled={catalogStatus !== 'ok'}
+                              className={`${formInputClass} max-w-full`}
+                            >
+                              <option value="">— प्रॉडक्ट निवडा / Select product —</option>
+                              {catalogSorted.map((p) => {
+                                const id = String(p._id)
+                                const label = [p.productName, p.category].filter(Boolean).join(' · ')
+                                return (
+                                  <option key={id} value={id}>
+                                    {label || id}
+                                  </option>
+                                )
+                              })}
+                            </select>
                           </td>
                           <td className="px-3 py-2 align-top">
                             <input
