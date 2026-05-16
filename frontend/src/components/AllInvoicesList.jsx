@@ -113,13 +113,19 @@ function AllInvoicesList({ className = '', embedded = false }) {
     navigate(invoiceEditPath(rec.id))
   }
 
+  const tableInset = 'flex min-h-0 flex-1 flex-col overflow-hidden px-4 py-4 md:px-5 md:py-5'
+  const tableBox =
+    'flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-[#eadbcb]'
+
   const shellClass = embedded
-    ? `flex min-h-0 flex-col overflow-x-hidden bg-white p-5 md:h-full md:overflow-hidden md:p-6 ${className}`
+    ? `flex h-full min-h-0 flex-col overflow-hidden bg-white ${className}`
     : `flex min-h-0 flex-col overflow-x-hidden rounded-2xl border border-[#eadbcb] bg-white p-4 shadow-sm md:h-full md:overflow-hidden md:p-6 ${className}`
 
   return (
     <section className={shellClass}>
-      <div className="shrink-0">
+      <div
+        className={`shrink-0 ${embedded ? 'px-5 py-4 md:px-6 md:py-5' : ''}`}
+      >
         <div className="flex items-center justify-between gap-2">
           <h2 className="min-w-0 shrink font-serif text-xl text-[#6f1c15] md:text-2xl">All Invoices</h2>
           {!loading && !listError ? (
@@ -148,22 +154,40 @@ function AllInvoicesList({ className = '', embedded = false }) {
       </div>
 
       {loading ? (
-        <p className="mt-6 shrink-0 text-sm text-[#7a5b4f]">Loading invoices…</p>
+        <p
+          className={`mt-6 shrink-0 text-sm text-[#7a5b4f] ${embedded ? 'px-4 md:px-5' : ''}`}
+        >
+          Loading invoices…
+        </p>
       ) : listError ? (
-        <p className="mt-6 shrink-0 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+        <p
+          className={`mt-6 shrink-0 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 ${
+            embedded ? 'mx-4 md:mx-5' : ''
+          }`}
+        >
           {listError}
         </p>
       ) : sorted.length === 0 ? (
-        <p className="mt-6 shrink-0 rounded-lg border border-dashed border-[#ddc9b5] bg-[#fdfcfa] px-4 py-8 text-center text-sm text-[#7a5b4f]">
+        <p
+          className={`mt-6 shrink-0 rounded-lg border border-dashed border-[#ddc9b5] bg-[#fdfcfa] px-4 py-8 text-center text-sm text-[#7a5b4f] ${
+            embedded ? 'mx-4 md:mx-5' : ''
+          }`}
+        >
           No invoices saved yet. Generate an invoice and it will appear here.
         </p>
       ) : filtered.length === 0 ? (
-        <p className="mt-4 shrink-0 rounded-lg border border-dashed border-[#ddc9b5] bg-[#fdfcfa] px-4 py-8 text-center text-sm text-[#7a5b4f]">
+        <p
+          className={`mt-4 shrink-0 rounded-lg border border-dashed border-[#ddc9b5] bg-[#fdfcfa] px-4 py-8 text-center text-sm text-[#7a5b4f] ${
+            embedded ? 'mx-4 md:mx-5' : ''
+          }`}
+        >
           No invoices match &quot;{searchQuery.trim()}&quot;.
         </p>
       ) : (
         <>
-          <ul className="mt-3 flex flex-col gap-2 md:hidden">
+          <ul
+            className={`mt-3 flex flex-col gap-2 md:hidden ${embedded ? 'px-4 md:px-5' : ''}`}
+          >
             {filtered.map((rec) => {
               const inv = rec.invoice || {}
               const total = grandTotalFromInvoice(inv)
@@ -216,9 +240,10 @@ function AllInvoicesList({ className = '', embedded = false }) {
             })}
           </ul>
 
+          <div className={embedded ? tableInset : 'mt-4 flex min-h-0 flex-1 flex-col'}>
           <div
             className={`scrollbar-hide hidden min-h-0 flex-1 overflow-y-auto overscroll-contain md:block ${
-              embedded ? 'mt-4 overflow-hidden rounded-xl border border-[#eadbcb]' : 'mt-4'
+              embedded ? tableBox : ''
             }`}
           >
           <table className="w-full border-collapse text-left text-sm">
@@ -277,6 +302,7 @@ function AllInvoicesList({ className = '', embedded = false }) {
               })}
             </tbody>
           </table>
+          </div>
           </div>
         </>
       )}

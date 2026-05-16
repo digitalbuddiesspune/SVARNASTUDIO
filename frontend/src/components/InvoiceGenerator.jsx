@@ -339,12 +339,16 @@ function InvoiceGenerator({ className = '', editId = null, embedded = false }) {
     'mb-1 block text-xs font-semibold uppercase tracking-wide text-[#5f1f17]'
 
   const shellClass = embedded
-    ? `flex h-full min-h-0 max-w-full min-w-0 flex-col overflow-x-hidden bg-white p-5 md:p-6 ${className}`
+    ? `flex h-full min-h-0 max-w-full min-w-0 flex-col overflow-hidden bg-white ${className}`
     : `flex h-full min-h-0 max-w-full min-w-0 flex-col overflow-x-hidden rounded-2xl border border-[#eadbcb] bg-white p-4 shadow-md md:p-6 ${className}`
 
   return (
-    <div className={shellClass}>
-      <div className="mb-6 shrink-0 print:hidden">
+      <div className={shellClass}>
+      <div
+        className={`shrink-0 print:hidden ${
+          embedded ? 'px-5 py-4 md:px-6 md:py-5' : 'mb-6'
+        }`}
+      >
         <h2 className="font-serif text-2xl font-semibold text-[#5f1f17] md:text-3xl">
           {isEditMode ? 'Edit Invoice' : 'Invoice Generator'}
         </h2>
@@ -368,8 +372,18 @@ function InvoiceGenerator({ className = '', editId = null, embedded = false }) {
       ) : (
       <>
       {/* —— Entry form —— */}
-      <div className="scrollbar-hide min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain print:hidden">
-        <div className="min-w-0 max-w-full rounded-2xl border border-[#eadbcb] bg-white p-4 shadow-md sm:p-5 md:p-8">
+      <div
+        className={`scrollbar-hide min-h-0 overflow-x-hidden print:hidden lg:flex-1 lg:overflow-y-auto lg:overscroll-contain ${
+          embedded ? 'px-5 py-4 md:px-6 md:py-5' : ''
+        }`}
+      >
+        <div
+          className={
+            embedded
+              ? 'min-w-0 max-w-full'
+              : 'min-w-0 max-w-full rounded-2xl border border-[#eadbcb] bg-white p-4 shadow-md sm:p-5 md:p-8'
+          }
+        >
           <h3 className="border-b border-[#f0dfd4] pb-3 font-serif text-lg font-bold text-[#6f1b1d]">
             Invoice details
           </h3>

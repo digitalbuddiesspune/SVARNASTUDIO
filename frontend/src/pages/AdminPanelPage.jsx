@@ -87,9 +87,15 @@ const ADMIN_SIDEBAR =
 const ADMIN_MAIN =
   'flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-white'
 
-/** Page sections inside the right column. */
+/** Page sections inside the right column — no outer horizontal padding (full bleed). */
 const ADMIN_PANEL_CARD =
-  'flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-white p-5 md:p-6'
+  'flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-white'
+
+const ADMIN_PAGE_HEAD =
+  'shrink-0 bg-white px-5 py-4 md:px-6 md:py-5'
+
+const ADMIN_PAGE_BODY =
+  'scrollbar-hide min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4 md:px-6 md:py-5'
 
 const ADMIN_PANEL_SCROLL =
   'scrollbar-hide min-h-0 flex-1 overflow-y-auto overscroll-contain pr-0.5'
@@ -99,8 +105,12 @@ const DASHBOARD_STAT_CARD =
 
 const DASHBOARD_STAT_CARD_CLICKABLE = `${DASHBOARD_STAT_CARD} cursor-pointer transition hover:bg-[#f2e0d4] hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8f0019]/40`
 
+/** Space around the table (inset from main panel edges). */
+const ADMIN_TABLE_INSET =
+  'flex min-h-0 flex-1 flex-col overflow-hidden px-4 py-4 md:px-5 md:py-5'
+
 const ADMIN_TABLE_WRAP =
-  'mt-4 flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-[#eadbcb]'
+  'flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-[#eadbcb]'
 
 function AdminSidebarHeader({ compact = false }) {
   return (
@@ -502,7 +512,7 @@ function AdminPanelPage() {
   const totalCategories = new Set(products.map((product) => product.category).filter(Boolean)).size
 
   return (
-    <main className="flex min-h-screen flex-col overflow-x-hidden bg-[#faf7ec] lg:h-screen lg:max-h-screen lg:flex-row lg:overflow-hidden">
+    <main className="flex min-h-screen w-full flex-col overflow-x-hidden bg-[#faf7ec] lg:h-screen lg:max-h-screen lg:flex-row lg:overflow-hidden">
       {/* Mobile top bar — heading + menu button */}
       <header className="print:hidden sticky top-0 z-40 flex shrink-0 items-center justify-between gap-3 border-b border-[#eadbcb] bg-[#faf7ec]/95 px-4 py-3 backdrop-blur-sm lg:hidden">
         <h1 className="font-serif text-xl font-semibold text-[#5f1f17] sm:text-2xl">Admin Panel</h1>
@@ -562,27 +572,30 @@ function AdminPanelPage() {
         </div>
       ) : null}
 
-      <section className="flex min-h-0 w-full flex-1 flex-col overflow-hidden px-4 lg:flex-row lg:px-0">
-        <aside className={ADMIN_SIDEBAR}>
-          <AdminSidebarHeader />
-          <AdminSidebarNav
-            activeSection={activeSection}
-            onSelectSection={selectSection}
-            onLogout={handleLogout}
-          />
-        </aside>
+      <aside className={ADMIN_SIDEBAR}>
+        <AdminSidebarHeader />
+        <AdminSidebarNav
+          activeSection={activeSection}
+          onSelectSection={selectSection}
+          onLogout={handleLogout}
+        />
+      </aside>
 
-        <div className={ADMIN_MAIN}>
+      <div className={ADMIN_MAIN}>
           {activeSection === 'invoice' && (
             <InvoiceGenerator embedded className="min-h-0 flex-1" />
           )}
 
-          {activeSection === 'invoices-all' && <AllInvoicesList embedded className="min-h-0 flex-1" />}
+          {activeSection === 'invoices-all' && (
+            <AllInvoicesList embedded className="min-h-0 flex-1" />
+          )}
 
           {activeSection === 'dashboard' && (
             <section className={ADMIN_PANEL_CARD}>
-              <h2 className="shrink-0 font-serif text-2xl text-[#6f1c15]">Dashboard</h2>
-              <div className="mt-4 grid flex-1 content-start gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div className={ADMIN_PAGE_HEAD}>
+                <h2 className="font-serif text-2xl text-[#6f1c15]">Dashboard</h2>
+              </div>
+              <div className={`${ADMIN_PAGE_BODY} grid content-start gap-3 sm:grid-cols-2 lg:grid-cols-3`}>
                 <button
                   type="button"
                   onClick={() => setActiveSection('all')}
@@ -640,9 +653,11 @@ function AdminPanelPage() {
 
           {activeSection === 'add' && (
             <form onSubmit={handleSubmit} className={ADMIN_PANEL_CARD}>
-              <h2 className="shrink-0 font-serif text-2xl text-[#6f1c15]">Add Product</h2>
+              <div className={ADMIN_PAGE_HEAD}>
+                <h2 className="font-serif text-2xl text-[#6f1c15]">Add Product</h2>
+              </div>
 
-              <div className={`${ADMIN_PANEL_SCROLL} mt-4`}>
+              <div className={`${ADMIN_PANEL_SCROLL} ${ADMIN_PAGE_BODY}`}>
               <div className="grid gap-3 md:grid-cols-2">
                 <input
                   placeholder="Product Name *"
@@ -783,15 +798,16 @@ function AdminPanelPage() {
 
           {activeSection === 'all' && (
             <section className={`${ADMIN_PANEL_CARD} lg:overflow-hidden`}>
-              <div className="shrink-0">
+              <div className={ADMIN_PAGE_HEAD}>
                 <h2 className="font-serif text-2xl text-[#6f1c15]">All Products</h2>
                 <p className="mt-1 text-sm text-[#7a5b4f]">Click a row to view full product details.</p>
               </div>
               {loading ? (
-                <p className="mt-3 shrink-0 text-sm text-[#7a5b4f]">Loading products...</p>
+                <p className={`${ADMIN_PAGE_BODY} shrink-0 text-sm text-[#7a5b4f]`}>Loading products...</p>
               ) : products.length === 0 ? (
-                <p className="mt-3 shrink-0 text-sm text-[#7a5b4f]">No products yet.</p>
+                <p className={`${ADMIN_PAGE_BODY} shrink-0 text-sm text-[#7a5b4f]`}>No products yet.</p>
               ) : (
+                <div className={ADMIN_TABLE_INSET}>
                 <div className={ADMIN_TABLE_WRAP}>
                   <div className="scrollbar-hide min-h-0 flex-1 overflow-x-auto overflow-y-auto overscroll-contain">
                   <table className="w-full min-w-[800px] table-fixed border-collapse text-left text-sm">
@@ -926,11 +942,11 @@ function AdminPanelPage() {
                   </table>
                   </div>
                 </div>
+                </div>
               )}
             </section>
           )}
         </div>
-      </section>
 
       {isEditModalOpen && (
         <div className="fixed inset-0 z-[90] bg-black/45 p-3 md:p-6" onClick={resetForm}>

@@ -20,7 +20,13 @@ function App() {
   }, [location.pathname, location.search])
 
   return (
-    <div className="min-h-screen bg-[#faf6f0] text-[#4d2018]">
+    <div
+      className={
+        isAdminRoute
+          ? 'min-h-screen bg-[#faf7ec] text-[#4d2018]'
+          : 'min-h-screen bg-[#faf6f0] text-[#4d2018]'
+      }
+    >
       {!isAdminRoute && <Navbar />}
       <Routes>
         <Route path="/" element={<HomePage />} />
