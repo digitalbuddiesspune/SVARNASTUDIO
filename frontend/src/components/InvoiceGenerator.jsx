@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { formatCurrency, parseOptionalAmount, formatRupeeCell } from '../utils/invoiceFormat'
+import {
+  formatCurrency,
+  parseOptionalAmount,
+  formatRupeeCell,
+  invoiceTotals,
+} from '../utils/invoiceFormat'
 import { invoiceViewPath } from '../utils/invoicePaths'
 
 /** Default logo: file `frontend/public/invoice-logo.png` (URL from site root). */
@@ -49,6 +54,7 @@ const initialDraft = () => ({
   paymentStatus: '',
   paymentMode: '',
   upiId: '',
+  gstPercent: '',
   rows: [createEmptyRow()],
 })
 
@@ -79,6 +85,10 @@ function invoiceToDraft(inv) {
     paymentStatus: displayToField(inv?.paymentStatus),
     paymentMode: displayToField(inv?.paymentMode),
     upiId: displayToField(inv?.upiId),
+    gstPercent:
+      inv?.gstPercent != null && Number.isFinite(Number(inv.gstPercent)) && Number(inv.gstPercent) > 0
+        ? String(inv.gstPercent)
+        : '',
     rows: rows.length ? rows : [createEmptyRow()],
   }
 }
@@ -94,7 +104,6 @@ function InvoiceGenerator({ className = '', editId = null, embedded = false }) {
   const [loadingInvoice, setLoadingInvoice] = useState(isEditMode)
   const [editingMeta, setEditingMeta] = useState(null)
   const [nextOrderNo, setNextOrderNo] = useState('01')
-  const [nextInvoiceNumber, setNextInvoiceNumber] = useState('INV-262701')
 
   useEffect(() => {
     if (!editId) return undefined
@@ -138,7 +147,6 @@ function InvoiceGenerator({ className = '', editId = null, embedded = false }) {
         const data = await res.json()
         if (cancelled) return
         if (data.orderNo) setNextOrderNo(String(data.orderNo))
-        if (data.invoiceNumber) setNextInvoiceNumber(String(data.invoiceNumber))
       } catch (e) {
         console.error('Invoice preview', e)
       }
@@ -179,6 +187,15 @@ function InvoiceGenerator({ className = '', editId = null, embedded = false }) {
         }),
       ),
     [catalogProducts],
+  )
+
+  const draftTotals = useMemo(
+    () =>
+      invoiceTotals({
+        rows: draft.rows,
+        gstPercent: draft.gstPercent.trim() === '' ? 0 : draft.gstPercent,
+      }),
+    [draft.rows, draft.gstPercent],
   )
 
   const applyCatalogSelection = useCallback((rowId, productId) => {
@@ -249,6 +266,7 @@ function InvoiceGenerator({ className = '', editId = null, embedded = false }) {
       paymentStatus: draft.paymentStatus.trim(),
       paymentMode: draft.paymentMode.trim(),
       upiId: draft.upiId.trim(),
+      gstPercent: draft.gstPercent.trim() === '' ? 0 : Number(draft.gstPercent),
       lineItems: productRows.map((r) => ({
         lineId: r.id,
         productId: r.productId || undefined,
@@ -352,19 +370,6 @@ function InvoiceGenerator({ className = '', editId = null, embedded = false }) {
         <h2 className="font-serif text-2xl font-semibold text-[#5f1f17] md:text-3xl">
           {isEditMode ? 'Edit Invoice' : 'Invoice Generator'}
         </h2>
-        <p className="mt-1 text-sm text-[#7a5b4f]">
-          {isEditMode ? (
-            <>
-              Invoice <strong>{editingMeta?.invoiceNumber || '…'}</strong> संपादित करा, नंतर{' '}
-              <strong>Update Invoice</strong> वर क्लिक करा.
-            </>
-          ) : (
-            <>
-              ग्राहक, ऑर्डर तपशील व products भरा, नंतर <strong>Generate Invoice</strong>. Order no, invoice
-              number, invoice date व company contact आपोआप येतील.
-            </>
-          )}
-        </p>
       </div>
 
       {loadingInvoice ? (
@@ -391,12 +396,7 @@ function InvoiceGenerator({ className = '', editId = null, embedded = false }) {
           <div className="mt-6 grid gap-6">
             <div>
               <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-[#8f1328]">
-                Invoice &amp; order (ऑर्डर तपशील)
-              </p>
-              <p className="mb-3 break-words text-xs text-[#7a5b4f]">
-                {isEditMode
-                  ? 'Invoice no व Order no बदलत नाही. बाकी फील्ड edit करा.'
-                  : `Order no (01, 02, …), invoice number (${nextInvoiceNumber} पुढील) व invoice date generate वेळी येतील. बाकी फील्ड इथे भरा.`}
+                Invoice &amp; order
               </p>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
@@ -408,11 +408,6 @@ function InvoiceGenerator({ className = '', editId = null, embedded = false }) {
                     className={`${formInputClass} cursor-default bg-[#faf6f2] text-[#5f1f17]`}
                     aria-readonly="true"
                   />
-                  {!isEditMode ? (
-                    <p className="mt-1 text-xs text-[#7a5b4f]">
-                      पहिला ऑर्डर 01, नंतर 02, 03… / Auto-increments with each new invoice.
-                    </p>
-                  ) : null}
                 </div>
                 {isEditMode ? (
                   <div>
@@ -467,7 +462,7 @@ function InvoiceGenerator({ className = '', editId = null, embedded = false }) {
                     placeholder="e.g. Paid"
                   />
                 </div>
-                <div className="sm:col-span-2">
+                <div>
                   <label className={formLabelClass}>Payment mode</label>
                   <input
                     type="text"
@@ -477,8 +472,8 @@ function InvoiceGenerator({ className = '', editId = null, embedded = false }) {
                     placeholder="e.g. UPI / Cash / Card"
                   />
                 </div>
-                <div className="sm:col-span-2">
-                  <label className={formLabelClass}>UPI ID (भरण्यासाठी QR)</label>
+                <div>
+                  <label className={formLabelClass}>UPI ID</label>
                   <input
                     type="text"
                     value={draft.upiId}
@@ -488,19 +483,16 @@ function InvoiceGenerator({ className = '', editId = null, embedded = false }) {
                     autoComplete="off"
                     spellCheck={false}
                   />
-                  <p className="mt-1.5 text-xs text-[#7a5b4f]">
-                    Grand Total रकमेचा UPI QR इनव्हॉइसवर दिसेल / QR encodes the exact Grand Total (incl. 18% GST).
-                  </p>
                 </div>
               </div>
             </div>
 
             <div>
               <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-[#8f1328]">
-                Bill to (ग्राहक)
+                Bill to
               </p>
               <div className="grid gap-4 sm:grid-cols-2">
-                <div className="sm:col-span-2">
+                <div>
                   <label className={formLabelClass}>Name</label>
                   <input
                     type="text"
@@ -510,7 +502,7 @@ function InvoiceGenerator({ className = '', editId = null, embedded = false }) {
                     placeholder="Full name"
                   />
                 </div>
-                <div className="sm:col-span-2">
+                <div>
                   <label className={formLabelClass}>Email</label>
                   <input
                     type="email"
@@ -520,7 +512,7 @@ function InvoiceGenerator({ className = '', editId = null, embedded = false }) {
                     placeholder="email@example.com"
                   />
                 </div>
-                <div className="sm:col-span-2">
+                <div>
                   <label className={formLabelClass}>Phone</label>
                   <input
                     type="text"
@@ -530,12 +522,12 @@ function InvoiceGenerator({ className = '', editId = null, embedded = false }) {
                     placeholder="Mobile"
                   />
                 </div>
-                <div className="sm:col-span-2">
+                <div>
                   <label className={formLabelClass}>Address</label>
                   <textarea
                     value={draft.customerAddress}
                     onChange={(e) => setDraftField('customerAddress', e.target.value)}
-                    rows={3}
+                    rows={2}
                     className={`${formInputClass} resize-y`}
                     placeholder="Full address"
                   />
@@ -600,7 +592,7 @@ function InvoiceGenerator({ className = '', editId = null, embedded = false }) {
                             disabled={catalogStatus !== 'ok'}
                             className={formInputClass}
                           >
-                            <option value="">— प्रॉडक्ट निवडा / Select product —</option>
+                            <option value="">Select product</option>
                             {catalogSorted.map((p) => {
                               const id = String(p._id)
                               const label = [p.productName, p.category].filter(Boolean).join(' · ')
@@ -690,7 +682,7 @@ function InvoiceGenerator({ className = '', editId = null, embedded = false }) {
                               disabled={catalogStatus !== 'ok'}
                               className={`${formInputClass} max-w-full`}
                             >
-                              <option value="">— प्रॉडक्ट निवडा / Select product —</option>
+                              <option value="">Select product</option>
                               {catalogSorted.map((p) => {
                                 const id = String(p._id)
                                 const label = [p.productName, p.category].filter(Boolean).join(' · ')
@@ -754,6 +746,44 @@ function InvoiceGenerator({ className = '', editId = null, embedded = false }) {
                   </tbody>
                 </table>
               </div>
+
+              <div className="mt-5 grid gap-4 sm:grid-cols-2 sm:items-start">
+                <div className="max-w-xs">
+                  <label className={formLabelClass}>GST (%)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    step={0.01}
+                    value={draft.gstPercent}
+                    onChange={(e) => setDraftField('gstPercent', e.target.value)}
+                    className={formInputClass}
+                    placeholder="e.g. 18"
+                  />
+                </div>
+                <div className="rounded-xl border border-[#eadbcb] bg-[#fdfcfa] p-4 sm:ml-auto sm:max-w-sm sm:w-full">
+                  <div className="space-y-2 text-sm text-[#6e4f43]">
+                    <div className="flex justify-between gap-4">
+                      <span>Subtotal</span>
+                      <span className="font-mono font-semibold text-[#5f1f17]">
+                        ₹{formatCurrency(draftTotals.subtotal)}
+                      </span>
+                    </div>
+                    {draftTotals.gstPercent > 0 ? (
+                      <div className="flex justify-between gap-4">
+                        <span>GST ({draftTotals.gstPercent}%)</span>
+                        <span className="font-mono font-semibold text-[#5f1f17]">
+                          ₹{formatCurrency(draftTotals.gst)}
+                        </span>
+                      </div>
+                    ) : null}
+                    <div className="flex justify-between gap-4 border-t border-[#eadbcb] pt-2 text-base font-bold text-[#8f0019]">
+                      <span>Grand Total</span>
+                      <span className="font-mono">₹{formatCurrency(draftTotals.grandTotal)}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -774,13 +804,6 @@ function InvoiceGenerator({ className = '', editId = null, embedded = false }) {
         </div>
       </div>
 
-      {!isEditMode ? (
-        <div className="print:hidden mt-4 shrink-0 rounded-lg border border-dashed border-[#ddc9b5] bg-[#fdfcfa] px-4 py-2.5 text-center">
-          <p className="text-sm text-[#7a5b4f]">
-            Form भरून &quot;Generate Invoice&quot; वर क्लिक केल्यावर full invoice पृष्ठ उघडेल.
-          </p>
-        </div>
-      ) : null}
       </>
       )}
     </div>

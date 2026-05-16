@@ -42,6 +42,7 @@ const invoiceSchema = new mongoose.Schema(
     paymentStatus: { type: String, trim: true, default: "" },
     paymentMode: { type: String, trim: true, default: "" },
     upiId: { type: String, trim: true, default: "" },
+    gstPercent: { type: Number, default: 0, min: 0, max: 100 },
 
     lineItems: {
       type: [lineItemSchema],

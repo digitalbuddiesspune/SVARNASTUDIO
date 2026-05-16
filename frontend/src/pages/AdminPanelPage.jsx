@@ -1,5 +1,6 @@
 import InvoiceGenerator from '../components/InvoiceGenerator'
 import AllInvoicesList from '../components/AllInvoicesList'
+import AllRevenueList from '../components/AllRevenueList'
 import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { formatCurrency } from '../utils/invoiceFormat'
@@ -120,13 +121,6 @@ function AdminSidebarHeader({ compact = false }) {
         alt="Svarna Studio"
         className={`mx-auto object-contain ${compact ? 'h-12 w-auto max-w-[140px]' : 'h-16 w-auto max-w-[180px]'}`}
       />
-      <h1
-        className={`mt-3 text-center font-serif text-[#5f1f17] ${
-          compact ? 'text-lg font-semibold' : 'text-2xl'
-        }`}
-      >
-        Admin Panel
-      </h1>
     </div>
   )
 }
@@ -221,15 +215,13 @@ const ADMIN_NAV_ITEMS = [
   { id: 'all', label: 'All Products', Icon: IconProducts },
   { id: 'invoice', label: 'Invoice Generate', Icon: IconFileInvoice },
   { id: 'invoices-all', label: 'All Invoices', Icon: IconList },
+  { id: 'revenue-all', label: 'All Revenue', Icon: IconRupee },
 ]
 
-function AdminSidebarNav({ activeSection, onSelectSection, onLogout, showSubtitle = true }) {
+function AdminSidebarNav({ activeSection, onSelectSection, onLogout }) {
   return (
     <>
-      {showSubtitle ? (
-        <p className="text-center text-xs text-[#7a5b4f]">Manage products and catalog.</p>
-      ) : null}
-      <nav className={`flex flex-col gap-2 ${showSubtitle ? 'mt-5 lg:flex-1' : 'mt-2'}`}>
+      <nav className="mt-4 flex flex-col gap-2 lg:mt-5 lg:flex-1">
         {ADMIN_NAV_ITEMS.map(({ id, label, Icon }) => (
           <button
             key={id}
@@ -249,9 +241,7 @@ function AdminSidebarNav({ activeSection, onSelectSection, onLogout, showSubtitl
       <button
         type="button"
         onClick={onLogout}
-        className={`flex w-full items-center justify-center gap-2 rounded-lg border border-[#8f0019] px-4 py-2 text-sm font-semibold text-[#8f0019] transition hover:bg-[#8f0019] hover:text-white ${
-          showSubtitle ? 'mt-4 lg:mt-auto' : 'mt-4'
-        }`}
+        className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-[#8f0019] px-4 py-2 text-sm font-semibold text-[#8f0019] transition hover:bg-[#8f0019] hover:text-white lg:mt-auto"
       >
         <IconLogout className="h-4 w-4" />
         Logout
@@ -515,7 +505,11 @@ function AdminPanelPage() {
     <main className="flex min-h-screen w-full flex-col overflow-x-hidden bg-[#faf7ec] lg:h-screen lg:max-h-screen lg:flex-row lg:overflow-hidden">
       {/* Mobile top bar — heading + menu button */}
       <header className="print:hidden sticky top-0 z-40 flex shrink-0 items-center justify-between gap-3 border-b border-[#eadbcb] bg-[#faf7ec]/95 px-4 py-3 backdrop-blur-sm lg:hidden">
-        <h1 className="font-serif text-xl font-semibold text-[#5f1f17] sm:text-2xl">Admin Panel</h1>
+        <img
+          src={ADMIN_LOGO}
+          alt="Svarna Studio"
+          className="h-9 w-auto max-w-[120px] object-contain"
+        />
         <button
           type="button"
           onClick={() => setMobileMenuOpen((open) => !open)}
@@ -566,7 +560,6 @@ function AdminPanelPage() {
               activeSection={activeSection}
               onSelectSection={selectSection}
               onLogout={handleLogout}
-              showSubtitle={false}
             />
           </aside>
         </div>
@@ -588,6 +581,10 @@ function AdminPanelPage() {
 
           {activeSection === 'invoices-all' && (
             <AllInvoicesList embedded className="min-h-0 flex-1" />
+          )}
+
+          {activeSection === 'revenue-all' && (
+            <AllRevenueList embedded className="min-h-0 flex-1" />
           )}
 
           {activeSection === 'dashboard' && (
@@ -636,7 +633,7 @@ function AdminPanelPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setActiveSection('invoices-all')}
+                  onClick={() => setActiveSection('revenue-all')}
                   className={DASHBOARD_STAT_CARD_CLICKABLE}
                 >
                   <div className="flex items-start justify-between gap-2">

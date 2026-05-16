@@ -23,7 +23,7 @@ function InvoicePreview({ invoice, className = '' }) {
   const [viewportScale, setViewportScale] = useState(1)
   const [scaledWrapHeight, setScaledWrapHeight] = useState(null)
 
-  const { subtotal, gst, grandTotal } = useMemo(() => invoiceTotals(invoice), [invoice])
+  const { subtotal, gst, grandTotal, gstPercent } = useMemo(() => invoiceTotals(invoice), [invoice])
 
   useEffect(() => {
     let cancelled = false
@@ -471,10 +471,12 @@ function InvoicePreview({ invoice, className = '' }) {
                   <span>Subtotal</span>
                   <span className="font-mono font-semibold text-[#5f1f17]">₹{formatCurrency(subtotal)}</span>
                 </div>
-                <div className="flex justify-between gap-4 text-sm text-[#6e4f43]">
-                  <span>GST (18%)</span>
-                  <span className="font-mono font-semibold text-[#5f1f17]">₹{formatCurrency(gst)}</span>
-                </div>
+                {gstPercent > 0 ? (
+                  <div className="flex justify-between gap-4 text-sm text-[#6e4f43]">
+                    <span>GST ({gstPercent}%)</span>
+                    <span className="font-mono font-semibold text-[#5f1f17]">₹{formatCurrency(gst)}</span>
+                  </div>
+                ) : null}
                 <div className="border-t border-[#eadbcb] pt-3">
                   <div className="flex justify-between gap-4 text-base font-bold text-[#8f0019]">
                     <span>Grand Total</span>

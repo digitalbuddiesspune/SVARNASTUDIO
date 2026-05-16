@@ -86,14 +86,22 @@ function normalizeLineItems(rawItems = []) {
     }));
 }
 
-function computeTotals(lineItems) {
+function parseGstPercent(raw) {
+  if (raw === null || raw === undefined || raw === "") return 0;
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n < 0) return 0;
+  return Math.min(n, 100);
+}
+
+function computeTotals(lineItems, gstPercent = 0) {
   const subtotal = lineItems.reduce(
     (sum, row) => sum + (row.discountedPrice ?? 0),
     0
   );
-  const gstAmount = subtotal * 0.18;
+  const rate = parseGstPercent(gstPercent) / 100;
+  const gstAmount = subtotal * rate;
   const grandTotal = subtotal + gstAmount;
-  return { subtotal, gstAmount, grandTotal };
+  return { subtotal, gstAmount, grandTotal, gstPercent: parseGstPercent(gstPercent) };
 }
 
 function buildInvoicePayload(body, { invoiceSeq, invoiceNumber, orderNo, isUpdate = false }) {
@@ -122,7 +130,8 @@ function buildInvoicePayload(body, { invoiceSeq, invoiceNumber, orderNo, isUpdat
     ? formatInvoiceDateTime(orderDate)
     : String(body.orderDateDisplay || "—").trim() || "—";
 
-  const totals = computeTotals(lineItems);
+  const gstPercent = parseGstPercent(body.gstPercent);
+  const totals = computeTotals(lineItems, gstPercent);
 
   const payload = {
     logoDataUrl: String(body.logoDataUrl || "").trim(),
@@ -183,6 +192,7 @@ export function invoiceToClientShape(doc) {
     paymentStatus: d.paymentStatus?.trim() ? d.paymentStatus : "—",
     paymentMode: d.paymentMode?.trim() ? d.paymentMode : "—",
     upiId: d.upiId || "",
+    gstPercent: d.gstPercent != null ? Number(d.gstPercent) : 0,
     orderDateInput:
       d.orderDate && !Number.isNaN(new Date(d.orderDate).getTime())
         ? new Date(d.orderDate).toISOString().slice(0, 16)

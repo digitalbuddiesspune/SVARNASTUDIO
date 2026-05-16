@@ -22,23 +22,30 @@ export function formatRupeeCell(raw) {
   return `₹${formatCurrency(n)}`
 }
 
+export function gstPercentFromInvoice(invoice) {
+  if (invoice?.gstPercent == null || invoice?.gstPercent === '') return 0
+  const n = Number(invoice.gstPercent)
+  if (!Number.isFinite(n) || n <= 0) return 0
+  return Math.min(n, 100)
+}
+
 export function invoiceTotals(invoice) {
-  if (invoice?.grandTotal != null && Number.isFinite(Number(invoice.grandTotal))) {
-    const grandTotal = Number(invoice.grandTotal)
-    const subtotal =
-      invoice.subtotal != null && Number.isFinite(Number(invoice.subtotal))
-        ? Number(invoice.subtotal)
-        : grandTotal / 1.18
-    const gst =
-      invoice.gstAmount != null && Number.isFinite(Number(invoice.gstAmount))
-        ? Number(invoice.gstAmount)
-        : grandTotal - subtotal
-    return { subtotal, gst, grandTotal }
-  }
-  const subtotal = (invoice?.rows || []).reduce(
+  const gstPercent = gstPercentFromInvoice(invoice)
+
+  const subtotalFromRows = (invoice?.rows || []).reduce(
     (sum, row) => sum + (parseOptionalAmount(row.discountedPrice) ?? 0),
     0,
   )
-  const gst = subtotal * 0.18
-  return { subtotal, gst, grandTotal: subtotal + gst }
+  const subtotal =
+    invoice?.subtotal != null && Number.isFinite(Number(invoice.subtotal))
+      ? Number(invoice.subtotal)
+      : subtotalFromRows
+
+  if (gstPercent <= 0) {
+    return { subtotal, gst: 0, grandTotal: subtotal, gstPercent: 0 }
+  }
+
+  const rate = gstPercent / 100
+  const gst = subtotal * rate
+  return { subtotal, gst, grandTotal: subtotal + gst, gstPercent }
 }

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { invoiceEditPath, invoiceViewPath } from '../utils/invoicePaths'
+import { invoiceTotals } from '../utils/invoiceFormat'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
 
@@ -10,12 +11,7 @@ function formatCurrency(value) {
 }
 
 function grandTotalFromInvoice(inv) {
-  if (inv?.grandTotal != null && Number.isFinite(Number(inv.grandTotal))) {
-    return Number(inv.grandTotal)
-  }
-  if (!inv?.rows?.length) return 0
-  const subtotal = inv.rows.reduce((s, r) => s + (Number(r.discountedPrice) || 0), 0)
-  return subtotal + subtotal * 0.18
+  return invoiceTotals(inv).grandTotal
 }
 
 function formatSavedAt(iso) {
@@ -146,11 +142,6 @@ function AllInvoicesList({ className = '', embedded = false }) {
             </div>
           ) : null}
         </div>
-        <p className="mt-1 hidden text-sm text-[#7a5b4f] md:block">
-          Generated invoices are saved in the database. Use <strong>Details</strong> to view or{' '}
-          <strong>Edit</strong> to change an invoice.
-          invoice view (print / PDF).
-        </p>
       </div>
 
       {loading ? (
