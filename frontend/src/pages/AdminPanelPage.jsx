@@ -531,7 +531,7 @@ function AdminPanelPage() {
         </div>
       ) : null}
 
-      <section className="mx-auto flex h-full min-h-0 w-full max-w-7xl flex-1 flex-col gap-5 lg:grid lg:grid-cols-[minmax(200px,22%)_minmax(0,1fr)] lg:items-stretch">
+      <section className="mx-auto flex w-full max-w-7xl flex-col gap-5 lg:flex-1 lg:grid lg:h-full lg:min-h-0 lg:grid-cols-[minmax(200px,22%)_minmax(0,1fr)] lg:items-stretch">
         <aside className={`print:hidden hidden w-full self-stretch lg:flex ${ADMIN_SIDEBAR_CARD}`}>
           <h1 className="font-serif text-2xl text-[#5f1f17]">Admin Panel</h1>
           <AdminSidebarNav
@@ -541,12 +541,12 @@ function AdminPanelPage() {
           />
         </aside>
 
-        <div className="flex h-full min-h-0 min-w-0 max-w-full flex-1 flex-col self-stretch overflow-x-hidden print:max-w-none lg:min-w-0">
+        <div className="flex min-w-0 max-w-full flex-col self-stretch overflow-x-hidden print:max-w-none lg:h-full lg:min-h-0 lg:flex-1 lg:min-w-0">
           {activeSection === 'invoice' && (
-            <InvoiceGenerator className="min-h-0 flex-1 shadow-sm" />
+            <InvoiceGenerator className="shadow-sm lg:min-h-0 lg:flex-1" />
           )}
 
-          {activeSection === 'invoices-all' && <AllInvoicesList className="min-h-0 flex-1" />}
+          {activeSection === 'invoices-all' && <AllInvoicesList className="lg:min-h-0 lg:flex-1" />}
 
           {activeSection === 'dashboard' && (
             <section className={ADMIN_PANEL_CARD}>

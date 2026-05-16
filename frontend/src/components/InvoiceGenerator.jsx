@@ -340,7 +340,7 @@ function InvoiceGenerator({ className = '', editId = null }) {
 
   return (
     <div
-      className={`flex h-full min-h-0 max-w-full min-w-0 flex-col overflow-x-hidden rounded-2xl border border-[#eadbcb] bg-white p-4 shadow-md md:p-6 ${className}`}
+      className={`flex max-w-full min-w-0 flex-col overflow-x-hidden rounded-2xl border border-[#eadbcb] bg-white p-4 shadow-md md:p-6 lg:h-full lg:min-h-0 ${className}`}
     >
       <div className="mb-6 shrink-0 print:hidden">
         <h2 className="font-serif text-2xl font-semibold text-[#5f1f17] md:text-3xl">
@@ -366,7 +366,7 @@ function InvoiceGenerator({ className = '', editId = null }) {
       ) : (
       <>
       {/* —— Entry form —— */}
-      <div className="scrollbar-hide min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain print:hidden">
+      <div className="scrollbar-hide min-h-0 overflow-x-hidden print:hidden lg:flex-1 lg:overflow-y-auto lg:overscroll-contain">
         <div className="min-w-0 max-w-full rounded-2xl border border-[#eadbcb] bg-white p-4 shadow-md sm:p-5 md:p-8">
           <h3 className="border-b border-[#f0dfd4] pb-3 font-serif text-lg font-bold text-[#6f1b1d]">
             Invoice details
