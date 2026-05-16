@@ -83,7 +83,7 @@ function invoiceToDraft(inv) {
   }
 }
 
-function InvoiceGenerator({ className = '', editId = null }) {
+function InvoiceGenerator({ className = '', editId = null, embedded = false }) {
   const navigate = useNavigate()
   const isEditMode = Boolean(editId)
   const [draft, setDraft] = useState(initialDraft)
@@ -338,10 +338,12 @@ function InvoiceGenerator({ className = '', editId = null }) {
   const formLabelClass =
     'mb-1 block text-xs font-semibold uppercase tracking-wide text-[#5f1f17]'
 
+  const shellClass = embedded
+    ? `flex h-full min-h-0 max-w-full min-w-0 flex-col overflow-x-hidden bg-white p-5 md:p-6 ${className}`
+    : `flex h-full min-h-0 max-w-full min-w-0 flex-col overflow-x-hidden rounded-2xl border border-[#eadbcb] bg-white p-4 shadow-md md:p-6 ${className}`
+
   return (
-    <div
-      className={`flex h-full min-h-0 max-w-full min-w-0 flex-col overflow-x-hidden rounded-2xl border border-[#eadbcb] bg-white p-4 shadow-md md:p-6 ${className}`}
-    >
+    <div className={shellClass}>
       <div className="mb-6 shrink-0 print:hidden">
         <h2 className="font-serif text-2xl font-semibold text-[#5f1f17] md:text-3xl">
           {isEditMode ? 'Edit Invoice' : 'Invoice Generator'}

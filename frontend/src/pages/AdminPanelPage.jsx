@@ -6,6 +6,7 @@ import { formatCurrency } from '../utils/invoiceFormat'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
 const ADMIN_STORAGE_KEY = 'svarna_admin_auth'
+const ADMIN_LOGO = `${import.meta.env.BASE_URL}adminlogo.png`
 
 const categoryOptions = [
   {
@@ -74,13 +75,21 @@ const defaultForm = {
   isNewArrival: false,
 }
 
-/** White card shell for the narrow left sidebar (no flex-1 — fixed column width). */
+/** Mobile drawer only — desktop sidebar is flush left (ADMIN_SIDEBAR). */
 const ADMIN_SIDEBAR_CARD =
-  'flex h-full min-h-0 flex-col rounded-2xl border border-[#eadbcb] bg-white p-4 shadow-sm md:p-6'
+  'flex h-full min-h-0 flex-col rounded-none rounded-r-2xl border border-[#eadbcb] bg-white p-4 shadow-xl md:p-5'
 
-/** White card shell for right-side panels — grows to fill remaining width. */
+/** Fixed left column — full viewport height, no outer margin. */
+const ADMIN_SIDEBAR =
+  'print:hidden hidden h-full w-[260px] shrink-0 flex-col border-r border-[#eadbcb] bg-white p-4 md:flex md:p-5'
+
+/** Right column — fills remaining width, edge-to-edge. */
+const ADMIN_MAIN =
+  'flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-white'
+
+/** Page sections inside the right column. */
 const ADMIN_PANEL_CARD =
-  'flex h-full min-h-0 flex-1 flex-col rounded-2xl border border-[#eadbcb] bg-white p-4 shadow-sm md:p-6'
+  'flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-white p-5 md:p-6'
 
 const ADMIN_PANEL_SCROLL =
   'scrollbar-hide min-h-0 flex-1 overflow-y-auto overscroll-contain pr-0.5'
@@ -89,6 +98,28 @@ const DASHBOARD_STAT_CARD =
   'w-full rounded-xl bg-[#f9ece5] p-4 text-left'
 
 const DASHBOARD_STAT_CARD_CLICKABLE = `${DASHBOARD_STAT_CARD} cursor-pointer transition hover:bg-[#f2e0d4] hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8f0019]/40`
+
+const ADMIN_TABLE_WRAP =
+  'mt-4 flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-[#eadbcb]'
+
+function AdminSidebarHeader({ compact = false }) {
+  return (
+    <div className={`shrink-0 border-b border-[#f0dfd4] ${compact ? 'pb-3' : 'pb-4'}`}>
+      <img
+        src={ADMIN_LOGO}
+        alt="Svarna Studio"
+        className={`mx-auto object-contain ${compact ? 'h-12 w-auto max-w-[140px]' : 'h-16 w-auto max-w-[180px]'}`}
+      />
+      <h1
+        className={`mt-3 text-center font-serif text-[#5f1f17] ${
+          compact ? 'text-lg font-semibold' : 'text-2xl'
+        }`}
+      >
+        Admin Panel
+      </h1>
+    </div>
+  )
+}
 
 function AdminIcon({ children, className = 'h-5 w-5' }) {
   return (
@@ -186,9 +217,9 @@ function AdminSidebarNav({ activeSection, onSelectSection, onLogout, showSubtitl
   return (
     <>
       {showSubtitle ? (
-        <p className="text-xs text-[#7a5b4f]">Manage products and catalog.</p>
+        <p className="text-center text-xs text-[#7a5b4f]">Manage products and catalog.</p>
       ) : null}
-      <nav className={`flex flex-col gap-2 ${showSubtitle ? 'mt-4 lg:flex-1' : 'mt-2'}`}>
+      <nav className={`flex flex-col gap-2 ${showSubtitle ? 'mt-5 lg:flex-1' : 'mt-2'}`}>
         {ADMIN_NAV_ITEMS.map(({ id, label, Icon }) => (
           <button
             key={id}
@@ -471,9 +502,9 @@ function AdminPanelPage() {
   const totalCategories = new Set(products.map((product) => product.category).filter(Boolean)).size
 
   return (
-    <main className="flex min-h-screen flex-col overflow-x-hidden bg-[#faf7ec] px-4 py-4 md:px-6 lg:h-screen lg:max-h-screen lg:overflow-hidden">
+    <main className="flex min-h-screen flex-col overflow-x-hidden bg-[#faf7ec] lg:h-screen lg:max-h-screen lg:flex-row lg:overflow-hidden">
       {/* Mobile top bar — heading + menu button */}
-      <header className="print:hidden sticky top-0 z-40 -mx-4 mb-4 flex items-center justify-between gap-3 border-b border-[#eadbcb] bg-[#faf7ec]/95 px-4 py-3 backdrop-blur-sm lg:hidden">
+      <header className="print:hidden sticky top-0 z-40 flex shrink-0 items-center justify-between gap-3 border-b border-[#eadbcb] bg-[#faf7ec]/95 px-4 py-3 backdrop-blur-sm lg:hidden">
         <h1 className="font-serif text-xl font-semibold text-[#5f1f17] sm:text-2xl">Admin Panel</h1>
         <button
           type="button"
@@ -508,18 +539,18 @@ function AdminPanelPage() {
             id="admin-mobile-menu"
             className={`absolute left-0 top-0 flex h-full w-[min(100%,280px)] flex-col ${ADMIN_SIDEBAR_CARD} rounded-none rounded-r-2xl shadow-xl`}
           >
-            <div className="mb-2 flex items-center justify-between gap-2 border-b border-[#f0dfd4] pb-3">
-              <h2 className="font-serif text-lg font-semibold text-[#5f1f17]">Menu</h2>
+            <div className="relative mb-2">
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(false)}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[#5f1f17] hover:bg-[#f8efe7]"
+                className="absolute right-0 top-0 inline-flex h-9 w-9 items-center justify-center rounded-lg text-[#5f1f17] hover:bg-[#f8efe7]"
                 aria-label="Close menu"
               >
                 <AdminIcon className="h-5 w-5">
                   <path d="M6 6l12 12M18 6L6 18" />
                 </AdminIcon>
               </button>
+              <AdminSidebarHeader compact />
             </div>
             <AdminSidebarNav
               activeSection={activeSection}
@@ -531,9 +562,9 @@ function AdminPanelPage() {
         </div>
       ) : null}
 
-      <section className="mx-auto flex h-full min-h-0 w-full max-w-7xl flex-1 flex-col gap-5 lg:grid lg:grid-cols-[minmax(200px,22%)_minmax(0,1fr)] lg:items-stretch">
-        <aside className={`print:hidden hidden w-full self-stretch lg:flex ${ADMIN_SIDEBAR_CARD}`}>
-          <h1 className="font-serif text-2xl text-[#5f1f17]">Admin Panel</h1>
+      <section className="flex min-h-0 w-full flex-1 flex-col overflow-hidden px-4 lg:flex-row lg:px-0">
+        <aside className={ADMIN_SIDEBAR}>
+          <AdminSidebarHeader />
           <AdminSidebarNav
             activeSection={activeSection}
             onSelectSection={selectSection}
@@ -541,12 +572,12 @@ function AdminPanelPage() {
           />
         </aside>
 
-        <div className="flex h-full min-h-0 min-w-0 max-w-full flex-1 flex-col self-stretch overflow-x-hidden print:max-w-none lg:min-w-0">
+        <div className={ADMIN_MAIN}>
           {activeSection === 'invoice' && (
-            <InvoiceGenerator className="min-h-0 flex-1 shadow-sm" />
+            <InvoiceGenerator embedded className="min-h-0 flex-1" />
           )}
 
-          {activeSection === 'invoices-all' && <AllInvoicesList className="min-h-0 flex-1" />}
+          {activeSection === 'invoices-all' && <AllInvoicesList embedded className="min-h-0 flex-1" />}
 
           {activeSection === 'dashboard' && (
             <section className={ADMIN_PANEL_CARD}>
@@ -761,7 +792,7 @@ function AdminPanelPage() {
               ) : products.length === 0 ? (
                 <p className="mt-3 shrink-0 text-sm text-[#7a5b4f]">No products yet.</p>
               ) : (
-                <div className="mt-4 flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-[#eadbcb]">
+                <div className={ADMIN_TABLE_WRAP}>
                   <div className="scrollbar-hide min-h-0 flex-1 overflow-x-auto overflow-y-auto overscroll-contain">
                   <table className="w-full min-w-[800px] table-fixed border-collapse text-left text-sm">
                     <colgroup>

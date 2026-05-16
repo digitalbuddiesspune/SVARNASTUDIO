@@ -34,7 +34,7 @@ function formatSavedAt(iso) {
   }
 }
 
-function AllInvoicesList({ className = '' }) {
+function AllInvoicesList({ className = '', embedded = false }) {
   const navigate = useNavigate()
   const [records, setRecords] = useState([])
   const [loading, setLoading] = useState(true)
@@ -113,10 +113,12 @@ function AllInvoicesList({ className = '' }) {
     navigate(invoiceEditPath(rec.id))
   }
 
+  const shellClass = embedded
+    ? `flex min-h-0 flex-col overflow-x-hidden bg-white p-5 md:h-full md:overflow-hidden md:p-6 ${className}`
+    : `flex min-h-0 flex-col overflow-x-hidden rounded-2xl border border-[#eadbcb] bg-white p-4 shadow-sm md:h-full md:overflow-hidden md:p-6 ${className}`
+
   return (
-    <section
-      className={`flex min-h-0 flex-col overflow-x-hidden rounded-2xl border border-[#eadbcb] bg-white p-4 shadow-sm md:h-full md:overflow-hidden md:p-6 ${className}`}
-    >
+    <section className={shellClass}>
       <div className="shrink-0">
         <div className="flex items-center justify-between gap-2">
           <h2 className="min-w-0 shrink font-serif text-xl text-[#6f1c15] md:text-2xl">All Invoices</h2>
@@ -214,7 +216,11 @@ function AllInvoicesList({ className = '' }) {
             })}
           </ul>
 
-          <div className="scrollbar-hide mt-4 hidden min-h-0 flex-1 overflow-y-auto overscroll-contain md:block">
+          <div
+            className={`scrollbar-hide hidden min-h-0 flex-1 overflow-y-auto overscroll-contain md:block ${
+              embedded ? 'mt-4 overflow-hidden rounded-xl border border-[#eadbcb]' : 'mt-4'
+            }`}
+          >
           <table className="w-full border-collapse text-left text-sm">
             <thead>
               <tr className="border-b border-[#eadbcb] bg-[#f8efe7] text-[#5f1f17]">
