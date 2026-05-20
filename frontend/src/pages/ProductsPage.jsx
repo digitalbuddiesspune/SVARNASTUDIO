@@ -1,8 +1,9 @@
-import Footer from '../components/Footer'
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
+import Footer from '../components/Footer'
+import { productCategoryLabel } from '../utils/productCategory'
+import { filterProductsByQuery } from '../utils/productFilters'
+import { API_BASE_URL } from '../config/api'
 
 function ProductsPage() {
   const [products, setProducts] = useState([])
@@ -20,6 +21,9 @@ function ProductsPage() {
 
   useEffect(() => {
     const fetchProducts = async () => {
+      setIsLoading(true)
+      setError('')
+      setProducts([])
       try {
         const query = new URLSearchParams()
         if (selectedCategory) {
@@ -39,22 +43,22 @@ function ProductsPage() {
           throw new Error('Failed to fetch products')
         }
         const data = await response.json()
-        const filteredProducts = selectedFabric
-          ? data.filter(
-              (product) =>
-                String(product.fabric || '').trim().toLowerCase() ===
-                selectedFabric.trim().toLowerCase(),
-            )
-          : data
+        const filteredProducts = filterProductsByQuery(Array.isArray(data) ? data : [], {
+          category: selectedCategory,
+          subCategory: selectedSubCategory,
+          fabric: selectedFabric,
+        })
         setProducts(filteredProducts)
       } catch (fetchError) {
         setError(fetchError.message)
+        setProducts([])
       } finally {
         setIsLoading(false)
       }
     }
 
     fetchProducts()
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }, [selectedCategory, selectedSubCategory, selectedFabric])
 
   return (
@@ -107,7 +111,7 @@ function ProductsPage() {
                 </Link>
                 <div className="p-3">
                   <p className="hidden text-xs font-semibold uppercase tracking-wider text-[#8f0019] sm:block">
-                    {product.category} - {product.subCategory}
+                    {productCategoryLabel(product.category)} - {product.subCategory}
                   </p>
                   <Link to={`/products/${product._id}`}>
                     <h2 className="mt-1 line-clamp-2 font-serif text-lg text-[#6f1c15] transition hover:text-[#8f0019]">

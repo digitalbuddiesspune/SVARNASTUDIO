@@ -1,3 +1,5 @@
+import { productCategoryLabel } from '../utils/productCategory'
+
 function WhatsAppIcon({ className = 'h-7 w-7' }) {
   return (
     <svg
@@ -140,7 +142,9 @@ function HowToOrder({ product = null }) {
       'Hi! I would like to place an order for this product:',
       '',
       `*${product.productName || 'Product'}*`,
-      product.category ? `Category: ${product.category}` : null,
+      productCategoryLabel(product.category)
+        ? `Category: ${productCategoryLabel(product.category)}`
+        : null,
       product.subCategory ? `Sub-category: ${product.subCategory}` : null,
       price ? `Price: Rs. ${price}` : null,
       productUrl ? `Link: ${productUrl}` : null,

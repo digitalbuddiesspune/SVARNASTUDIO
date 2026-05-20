@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import { sortCategoriesByDisplayOrder } from '../utils/categoryDisplayOrder'
+import { productsFilterPath } from '../utils/productFilters'
+import { API_BASE_URL } from '../config/api'
 
 const navLinks = [
   { label: 'Products', path: '/products' },
@@ -8,67 +11,24 @@ const navLinks = [
 ]
 const brandLogo =
   'https://res.cloudinary.com/dkq4kvwrr/image/upload/v1777467131/suvarnaStudiologo_cojcd7.png'
-const categories = [
-  {
-    category: 'Sarees',
-    subCategories: [
-      'Linen Sarees',
-      'Cotton Sarees',
-      'Silk Blend Sarees',
-      'Embroidered Sarees',
-      'Printed Sarees',
-      'Festive Sarees',
-    ],
-  },
-  {
-    category: 'Kurta Sets',
-    subCategories: [
-      'Straight Kurta Sets',
-      'A-line Kurta Sets',
-      'Printed Kurta Sets',
-      'Embroidered Kurta Sets',
-      'Festive Kurta Sets',
-      '2-Piece Sets',
-      '3-Piece Sets',
-    ],
-  },
-  {
-    category: 'Co-ord Sets',
-    subCategories: [
-      'Printed Co-ord Sets',
-      'Casual Co-ord Sets',
-      'Lounge Sets',
-      'Office Wear Sets',
-    ],
-  },
-  {
-    category: 'Tops',
-    subCategories: ['Ethnic Tops', 'Printed Tops', 'Crop Tops'],
-  },
-  
-  {
-    category: 'Indo-Western',
-    subCategories: [
-      'Fusion Sets',
-      'Cape Sets',
-      'Tunic + Pants',
-      'Designer Indo-Western',
-    ],
-  },{
-    category: 'Collections',
-    subCategories: [
-      'Festive Collection',
-      'Summer Linen Collection',
-      'Office Wear Collection',
-      'Wedding Collection',
-      'Minimal Everyday Wear',
-    ],
-  },
-]
+
+function mapCategoriesFromApi(list) {
+  if (!Array.isArray(list)) return []
+  return list
+    .map((doc) => ({
+      id: String(doc._id),
+      category: String(doc.name || '').trim(),
+      subCategories: Array.isArray(doc.subCategories)
+        ? doc.subCategories.map((s) => String(s).trim()).filter(Boolean)
+        : [],
+    }))
+    .filter((item) => item.category)
+}
 
 function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [categories, setCategories] = useState([])
   const location = useLocation()
   const isHomePage = location.pathname === '/'
   const useLightNavbar = isScrolled || !isHomePage
@@ -97,6 +57,23 @@ function Navbar() {
   useEffect(() => {
     setIsMobileMenuOpen(false)
   }, [location.pathname, location.search, location.hash])
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/categories`)
+        if (!res.ok) throw new Error('categories')
+        const data = await res.json()
+        if (!cancelled) setCategories(sortCategoriesByDisplayOrder(mapCategoriesFromApi(data)))
+      } catch {
+        if (!cancelled) setCategories([])
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   useEffect(() => {
     const desktopMediaQuery = window.matchMedia('(min-width: 768px)')
@@ -162,9 +139,9 @@ function Navbar() {
 
         <nav className="hidden items-center justify-center gap-2 md:flex">
           {categories.map((item) => (
-            <div key={item.category} className="group relative">
+            <div key={item.id} className="group relative">
               <Link
-                to={`/products?category=${encodeURIComponent(item.category)}`}
+                to={productsFilterPath(item.category)}
                 className={`rounded-full px-3 py-2 text-sm font-medium transition ${
                   useLightNavbar
                     ? 'text-black hover:bg-black/10'
@@ -181,7 +158,7 @@ function Navbar() {
                   {item.subCategories.map((subCategory) => (
                     <li key={subCategory}>
                       <Link
-                        to={`/products?category=${encodeURIComponent(item.category)}&subCategory=${encodeURIComponent(subCategory)}`}
+                        to={productsFilterPath(item.category, subCategory)}
                         className="block rounded-md px-2 py-1.5 text-left text-sm text-[#5e2e25] transition hover:bg-[#f9ece5]"
                         onClick={() => setIsMobileMenuOpen(false)}
                       >
@@ -254,26 +231,17 @@ function Navbar() {
           <div className="space-y-2">
             {categories.map((item) => (
               <details
-                key={item.category}
+                key={item.id}
                 className="rounded-xl border border-[#eadbcb] bg-white"
               >
                 <summary className="cursor-pointer list-none px-4 py-3 text-sm font-semibold text-[#5f1f17]">
                   {item.category}
                 </summary>
                 <ul className="border-t border-[#f3e6d8] px-2 py-2">
-                  <li>
-                    <Link
-                      to={`/products?category=${encodeURIComponent(item.category)}`}
-                      className="block rounded-md px-3 py-2 text-sm font-semibold text-[#5f1f17] transition hover:bg-[#f9ece5]"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      View all {item.category}
-                    </Link>
-                  </li>
                   {item.subCategories.map((subCategory) => (
                     <li key={subCategory}>
                       <Link
-                        to={`/products?category=${encodeURIComponent(item.category)}&subCategory=${encodeURIComponent(subCategory)}`}
+                        to={productsFilterPath(item.category, subCategory)}
                         className="block rounded-md px-3 py-2 text-sm text-[#6f4d42] transition hover:bg-[#f9ece5]"
                         onClick={() => setIsMobileMenuOpen(false)}
                       >

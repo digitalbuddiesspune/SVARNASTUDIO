@@ -33,6 +33,7 @@ function ContactForm({
     }
 
     const accessKey = import.meta.env.VITE_WEB3FORMS_ACCESS_KEY
+    const submitUrl = import.meta.env.VITE_WEB3FORMS_SUBMIT_URL
 
     if (!accessKey) {
       setStatus({
@@ -43,10 +44,19 @@ function ContactForm({
       return
     }
 
+    if (!submitUrl || !String(submitUrl).trim()) {
+      setStatus({
+        state: 'error',
+        message:
+          'Contact form URL is not configured. Set VITE_WEB3FORMS_SUBMIT_URL in .env (see .env.example).',
+      })
+      return
+    }
+
     setStatus({ state: 'loading', message: 'Sending your message...' })
 
     try {
-      const response = await fetch('https://api.web3forms.com/submit', {
+      const response = await fetch(String(submitUrl).trim(), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

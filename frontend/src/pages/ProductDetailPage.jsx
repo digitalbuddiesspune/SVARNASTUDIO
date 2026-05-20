@@ -1,9 +1,9 @@
-import Footer from '../components/Footer'
-import HowToOrder from '../components/HowToOrder'
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
+import Footer from '../components/Footer'
+import HowToOrder from '../components/HowToOrder'
+import { productCategoryLabel } from '../utils/productCategory'
+import { API_BASE_URL } from '../config/api'
 
 function ProductDetailPage() {
   const { id } = useParams()
@@ -195,7 +195,7 @@ function ProductDetailPage() {
 
             <article className="bg-transparent pt-1">
               <p className="text-xs font-semibold uppercase tracking-wider text-[#8f0019]">
-                {product.category} - {product.subCategory}
+                {productCategoryLabel(product.category)} - {product.subCategory}
               </p>
               <h1 className="mt-2 font-serif text-3xl leading-tight text-[#5b1712] md:text-4xl">
                 {product.productName}

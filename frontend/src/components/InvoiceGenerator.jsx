@@ -7,6 +7,8 @@ import {
   invoiceTotals,
 } from '../utils/invoiceFormat'
 import { invoiceViewPath } from '../utils/invoicePaths'
+import { productCategoryLabel } from '../utils/productCategory'
+import { API_BASE_URL } from '../config/api'
 
 /** Default logo: file `frontend/public/invoice-logo.png` (URL from site root). */
 const DEFAULT_INVOICE_LOGO = `${import.meta.env.BASE_URL}invoice-logo.png`
@@ -18,8 +20,6 @@ const COMPANY_ADDRESS_LINES = ['Ganesha Residency, Bhole Baba Nagar,', 'Uday Nag
 const COMPANY_ADDRESS = COMPANY_ADDRESS_LINES.join('\n')
 
 const DEFAULT_COMPANY_NAME = 'Svarna Studio'
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
 
 const createRowId = () =>
   typeof crypto !== 'undefined' && crypto.randomUUID
@@ -37,7 +37,7 @@ const createEmptyRow = () => ({
 })
 
 function invoiceCategoryFromProduct(p) {
-  const cat = String(p?.category || '').trim()
+  const cat = productCategoryLabel(p?.category).trim()
   const sub = String(p?.subCategory || '').trim()
   if (cat && sub) return `${cat} — ${sub}`
   return cat || sub || ''
@@ -595,7 +595,7 @@ function InvoiceGenerator({ className = '', editId = null, embedded = false }) {
                             <option value="">Select product</option>
                             {catalogSorted.map((p) => {
                               const id = String(p._id)
-                              const label = [p.productName, p.category].filter(Boolean).join(' · ')
+                              const label = [p.productName, productCategoryLabel(p.category)].filter(Boolean).join(' · ')
                               return (
                                 <option key={id} value={id}>
                                   {label || id}
@@ -685,7 +685,7 @@ function InvoiceGenerator({ className = '', editId = null, embedded = false }) {
                               <option value="">Select product</option>
                               {catalogSorted.map((p) => {
                                 const id = String(p._id)
-                                const label = [p.productName, p.category].filter(Boolean).join(' · ')
+                                const label = [p.productName, productCategoryLabel(p.category)].filter(Boolean).join(' · ')
                                 return (
                                   <option key={id} value={id}>
                                     {label || id}

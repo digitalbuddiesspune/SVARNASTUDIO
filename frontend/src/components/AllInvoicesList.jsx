@@ -2,8 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { invoiceEditPath, invoiceViewPath } from '../utils/invoicePaths'
 import { invoiceTotals } from '../utils/invoiceFormat'
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
+import { API_BASE_URL } from '../config/api'
 
 function formatCurrency(value) {
   const n = Number(value) || 0

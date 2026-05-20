@@ -324,7 +324,7 @@ export const updateInvoice = async (req, res) => {
     );
 
     const updated = await Invoice.findByIdAndUpdate(id, payload, {
-      new: true,
+      returnDocument: 'after',
       runValidators: true,
     });
 

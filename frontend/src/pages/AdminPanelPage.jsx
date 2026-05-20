@@ -1,80 +1,50 @@
 import InvoiceGenerator from '../components/InvoiceGenerator'
 import AllInvoicesList from '../components/AllInvoicesList'
 import AllRevenueList from '../components/AllRevenueList'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { formatCurrency } from '../utils/invoiceFormat'
+import { productCategoryLabel } from '../utils/productCategory'
+import { sortCategoriesByDisplayOrder } from '../utils/categoryDisplayOrder'
+import { API_BASE_URL } from '../config/api'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
 const ADMIN_STORAGE_KEY = 'svarna_admin_auth'
 const ADMIN_LOGO = `${import.meta.env.BASE_URL}adminlogo.png`
 
-const categoryOptions = [
-  {
-    category: 'Sarees',
-    subCategories: [
-      'Linen Sarees',
-      'Cotton Sarees',
-      'Silk Blend Sarees',
-      'Embroidered Sarees',
-      'Printed Sarees',
-      'Festive Sarees',
-    ],
-  },
-  {
-    category: 'Kurta Sets',
-    subCategories: [
-      'Straight Kurta Sets',
-      'A-line Kurta Sets',
-      'Printed Kurta Sets',
-      'Embroidered Kurta Sets',
-      'Festive Kurta Sets',
-      '2-Piece Sets',
-      '3-Piece Sets',
-    ],
-  },
-  {
-    category: 'Co-ord Sets',
-    subCategories: ['Printed Co-ord Sets', 'Casual Co-ord Sets', 'Lounge Sets', 'Office Wear Sets'],
-  },
-  {
-    category: 'Tops',
-    subCategories: ['Ethnic Tops', 'Printed Tops', 'Crop Tops'],
-  },
-  {
-    category: 'Indo-Western',
-    subCategories: ['Fusion Sets', 'Cape Sets', 'Tunic + Pants', 'Designer Indo-Western'],
-  },
-  {
-    category: 'Collections',
-    subCategories: [
-      'Festive Collection',
-      'Summer Linen Collection',
-      'Office Wear Collection',
-      'Wedding Collection',
-      'Minimal Everyday Wear',
-    ],
-  },
-]
-
-const defaultForm = {
-  productName: '',
-  brand: 'Svarna Studio',
-  category: categoryOptions[0].category,
-  subCategory: categoryOptions[0].subCategories[0],
-  fabric: '',
-  occasion: '',
-  details: '',
-  description: '',
-  styleTip: '',
-  imageUrls: '',
-  mrp: '',
-  discountPercent: '0',
-  stock: '0',
-  isFeatured: false,
-  isTrendingNow: false,
-  isNewArrival: false,
+/** Subcategories stored on each Category document (`subCategories` array). */
+function subsFromCategory(cat) {
+  if (!cat || !Array.isArray(cat.subCategories)) return []
+  return cat.subCategories.map((s) => String(s).trim()).filter(Boolean)
 }
+
+function emptyCategoryForm() {
+  return { name: '', imageUrl: '', subCategories: [''] }
+}
+
+function emptyProductForm(categoriesList) {
+  const first = categoriesList[0]
+  const subs = subsFromCategory(first)
+  return {
+    productName: '',
+    brand: 'Svarna Studio',
+    categoryId: first ? String(first._id) : '',
+    subCategory: subs[0] || '',
+    fabric: '',
+    occasion: '',
+    details: '',
+    description: '',
+    styleTip: '',
+    imageUrls: '',
+    mrp: '',
+    discountPercent: '0',
+    stock: '0',
+    isFeatured: false,
+    isTrendingNow: false,
+    isNewArrival: false,
+  }
+}
+
+const defaultForm = emptyProductForm([])
 
 /** Mobile drawer only — desktop sidebar is flush left (ADMIN_SIDEBAR). */
 const ADMIN_SIDEBAR_CARD =
@@ -197,6 +167,12 @@ const IconList = ({ className }) => (
   </AdminIcon>
 )
 
+const IconCategoryAdmin = ({ className }) => (
+  <AdminIcon className={className}>
+    <path d="M4 7h16M7 7V5a2 2 0 012-2h6a2 2 0 012 2v2M5 21h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+  </AdminIcon>
+)
+
 const IconRupee = ({ className }) => (
   <AdminIcon className={className}>
     <path d="M6 3h12M6 8h8a4 4 0 010 8H6M6 21h12" />
@@ -211,6 +187,7 @@ const IconLogout = ({ className }) => (
 
 const ADMIN_NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', Icon: IconDashboard },
+  { id: 'categories', label: 'Categories', Icon: IconCategoryAdmin },
   { id: 'add', label: 'Add Product', Icon: IconPlus },
   { id: 'all', label: 'All Products', Icon: IconProducts },
   { id: 'invoice', label: 'Invoice Generate', Icon: IconFileInvoice },
@@ -264,9 +241,43 @@ function AdminPanelPage() {
   const [dashboardStats, setDashboardStats] = useState({ orderCount: 0, totalRevenue: 0 })
   const [dashboardStatsLoading, setDashboardStatsLoading] = useState(true)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const subCategoryOptions = useMemo(() => {
-    return categoryOptions.find((item) => item.category === form.category)?.subCategories || []
-  }, [form.category])
+  const [categories, setCategories] = useState([])
+  const [categoriesLoading, setCategoriesLoading] = useState(true)
+  const [categoryForm, setCategoryForm] = useState(emptyCategoryForm)
+  const [editingCategoryId, setEditingCategoryId] = useState(null)
+  const [categoryStatus, setCategoryStatus] = useState('')
+  const categoriesRef = useRef([])
+  categoriesRef.current = categories
+
+  const categoriesSorted = useMemo(
+    () => sortCategoriesByDisplayOrder(categories),
+    [categories]
+  )
+
+  const selectedCategoryDoc = useMemo(() => {
+    const id = form.categoryId
+    return categories.find((x) => String(x._id) === String(id))
+  }, [form.categoryId, categories])
+
+  const subCategoryOptions = useMemo(
+    () => subsFromCategory(selectedCategoryDoc),
+    [selectedCategoryDoc]
+  )
+
+  const fetchCategories = async () => {
+    setCategoriesLoading(true)
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/categories`)
+      if (!response.ok) throw new Error('Failed to load categories')
+      const data = await response.json()
+      setCategories(Array.isArray(data) ? data : [])
+    } catch (error) {
+      setCategoryStatus(error.message)
+      setCategories([])
+    } finally {
+      setCategoriesLoading(false)
+    }
+  }
 
   const fetchProducts = async () => {
     setLoading(true)
@@ -307,6 +318,7 @@ function AdminPanelPage() {
       return
     }
     fetchProducts()
+    fetchCategories()
   }, [navigate])
 
   useEffect(() => {
@@ -316,6 +328,12 @@ function AdminPanelPage() {
       navigate(location.pathname, { replace: true, state: {} })
     }
   }, [location.state, location.pathname, navigate])
+
+  useEffect(() => {
+    if (activeSection === 'categories') {
+      fetchCategories()
+    }
+  }, [activeSection])
 
   useEffect(() => {
     if (activeSection === 'dashboard') {
@@ -347,13 +365,24 @@ function AdminPanelPage() {
   }
 
   useEffect(() => {
-    if (!subCategoryOptions.includes(form.subCategory)) {
-      setForm((prev) => ({
-        ...prev,
-        subCategory: subCategoryOptions[0] || '',
-      }))
-    }
-  }, [form.subCategory, subCategoryOptions])
+    if (!categories.length || form.categoryId) return
+    const next = emptyProductForm(sortCategoriesByDisplayOrder(categories))
+    setForm((prev) => ({
+      ...prev,
+      categoryId: next.categoryId,
+      subCategory: next.subCategory,
+    }))
+  }, [categories, form.categoryId])
+
+  useEffect(() => {
+    setForm((prev) => {
+      if (subCategoryOptions.length === 0) {
+        return prev.subCategory === '' ? prev : { ...prev, subCategory: '' }
+      }
+      if (subCategoryOptions.includes(prev.subCategory)) return prev
+      return { ...prev, subCategory: subCategoryOptions[0] || '' }
+    })
+  }, [form.categoryId, subCategoryOptions])
 
   useEffect(() => {
     document.body.style.overflow = isEditModalOpen || detailProduct ? 'hidden' : ''
@@ -367,7 +396,7 @@ function AdminPanelPage() {
   }
 
   const resetForm = () => {
-    setForm(defaultForm)
+    setForm(emptyProductForm(sortCategoriesByDisplayOrder(categoriesRef.current)))
     setEditingId('')
     setIsEditModalOpen(false)
   }
@@ -376,8 +405,14 @@ function AdminPanelPage() {
     event.preventDefault()
     setStatus('')
 
-    if (!form.productName.trim() || !form.category.trim() || !form.subCategory.trim()) {
-      setStatus('Product name, category and subcategory are required.')
+    if (!form.productName.trim() || !form.categoryId.trim()) {
+      setStatus('Product name and category are required.')
+      return
+    }
+    const catForSubs = categories.find((x) => String(x._id) === String(form.categoryId))
+    const subOpts = subsFromCategory(catForSubs)
+    if (subOpts.length > 0 && !form.subCategory.trim()) {
+      setStatus('Choose a subcategory, or add subcategories for this category under Categories.')
       return
     }
 
@@ -389,8 +424,8 @@ function AdminPanelPage() {
     const payload = {
       productName: form.productName.trim(),
       brand: form.brand.trim(),
-      category: form.category.trim(),
-      subCategory: form.subCategory.trim(),
+      category: form.categoryId.trim(),
+      subCategory: (form.subCategory || '').trim(),
       fabric: form.fabric.trim(),
       occasion: form.occasion.trim(),
       details: form.details.trim(),
@@ -443,11 +478,24 @@ function AdminPanelPage() {
     setEditingId(product._id)
     setActiveSection('all')
     setIsEditModalOpen(true)
+    const cat = product.category
+    const categoryId =
+      cat && typeof cat === 'object' && cat._id != null ? String(cat._id) : cat ? String(cat) : ''
+    const fromPopulated =
+      typeof cat === 'object' && cat != null && Array.isArray(cat.subCategories) ? cat : null
+    const fromList = categoriesRef.current.find((x) => String(x._id) === String(categoryId))
+    const catDoc = fromList || fromPopulated
+    const subs = subsFromCategory(catDoc)
+    const savedSub = String(product.subCategory || '').trim()
+    const subCategory =
+      subs.length === 0 ? savedSub : subs.includes(savedSub) ? savedSub : subs[0] || ''
+    const sortedCats = sortCategoriesByDisplayOrder(categoriesRef.current)
+    const fallbackId = sortedCats[0] ? String(sortedCats[0]._id) : ''
     setForm({
       productName: product.productName || '',
       brand: product.brand || 'Svarna Studio',
-      category: product.category || categoryOptions[0].category,
-      subCategory: product.subCategory || categoryOptions[0].subCategories[0],
+      categoryId: categoryId || fallbackId,
+      subCategory,
       fabric: product.fabric || '',
       occasion: product.occasion || '',
       details: product.details || '',
@@ -492,6 +540,79 @@ function AdminPanelPage() {
     }
   }
 
+  const handleDeleteCategory = async (id) => {
+    if (!window.confirm('Delete this category? Products must not use it.')) return
+    setCategoryStatus('')
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/categories/${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+      })
+      const body = await response.json().catch(() => ({}))
+      if (!response.ok) {
+        throw new Error(body.message || 'Failed to delete category')
+      }
+      await fetchCategories()
+      await fetchProducts()
+    } catch (error) {
+      setCategoryStatus(error.message)
+    }
+  }
+
+  const handleSaveCategory = async (event) => {
+    event.preventDefault()
+    setCategoryStatus('')
+    const name = categoryForm.name.trim()
+    if (!name) {
+      setCategoryStatus('Category name is required.')
+      return
+    }
+    const subCategories = categoryForm.subCategories.map((s) => String(s).trim()).filter(Boolean)
+    const isEdit = Boolean(editingCategoryId)
+    const url = isEdit
+      ? `${API_BASE_URL}/api/categories/${encodeURIComponent(editingCategoryId)}`
+      : `${API_BASE_URL}/api/categories`
+    const method = isEdit ? 'PUT' : 'POST'
+    const body = JSON.stringify({
+      name,
+      imageUrl: categoryForm.imageUrl.trim(),
+      subCategories,
+    })
+    try {
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body,
+      })
+      const responseBody = await response.json().catch(() => ({}))
+      if (!response.ok) {
+        throw new Error(responseBody.message || (isEdit ? 'Failed to update category' : 'Failed to add category'))
+      }
+      setCategoryForm(emptyCategoryForm())
+      setEditingCategoryId(null)
+      setCategoryStatus('')
+      await fetchCategories()
+    } catch (error) {
+      setCategoryStatus(error.message)
+    }
+  }
+
+  const beginEditCategory = (c) => {
+    const subs = subsFromCategory(c)
+    setEditingCategoryId(String(c._id))
+    setCategoryForm({
+      name: c.name || '',
+      imageUrl: c.imageUrl || '',
+      subCategories: subs.length ? [...subs] : [''],
+    })
+    setCategoryStatus('')
+  }
+
+  const cancelCategoryEdit = () => {
+    setEditingCategoryId(null)
+    setCategoryForm(emptyCategoryForm())
+    setCategoryStatus('')
+  }
+
   const handleLogout = () => {
     localStorage.removeItem(ADMIN_STORAGE_KEY)
     navigate('/admin')
@@ -499,7 +620,6 @@ function AdminPanelPage() {
 
   const totalProducts = products.length
   const featuredProducts = products.filter((product) => product.isFeatured).length
-  const totalCategories = new Set(products.map((product) => product.category).filter(Boolean)).size
 
   return (
     <main className="flex min-h-screen w-full flex-col overflow-x-hidden bg-[#faf7ec] lg:h-screen lg:max-h-screen lg:flex-row lg:overflow-hidden">
@@ -611,13 +731,19 @@ function AdminPanelPage() {
                   </div>
                   <p className="mt-2 text-3xl font-bold text-[#5f1f17]">{loading ? '…' : featuredProducts}</p>
                 </article>
-                <article className={DASHBOARD_STAT_CARD}>
+                <button
+                  type="button"
+                  onClick={() => setActiveSection('categories')}
+                  className={DASHBOARD_STAT_CARD_CLICKABLE}
+                >
                   <div className="flex items-start justify-between gap-2">
                     <p className="text-xs font-semibold uppercase tracking-wider text-[#8f0019]">Categories</p>
                     <IconLayers className="h-5 w-5 text-[#8f0019]/80" />
                   </div>
-                  <p className="mt-2 text-3xl font-bold text-[#5f1f17]">{loading ? '…' : totalCategories}</p>
-                </article>
+                  <p className="mt-2 text-3xl font-bold text-[#5f1f17]">
+                    {categoriesLoading ? '…' : categories.length}
+                  </p>
+                </button>
                 <button
                   type="button"
                   onClick={() => setActiveSection('invoices-all')}
@@ -648,6 +774,159 @@ function AdminPanelPage() {
             </section>
           )}
 
+          {activeSection === 'categories' && (
+            <section className={ADMIN_PANEL_CARD}>
+              <div className={ADMIN_PAGE_HEAD}>
+                <h2 className="font-serif text-2xl text-[#6f1c15]">Categories</h2>
+                <p className="mt-1 text-sm text-[#7a5b4f]">
+                  Add categories and subcategories here. Product forms use the category reference; subcategory options
+                  come from the subcategories you list for each category.
+                </p>
+              </div>
+              <div className={`${ADMIN_PANEL_SCROLL} ${ADMIN_PAGE_BODY}`}>
+                <form
+                  onSubmit={handleSaveCategory}
+                  className="space-y-3 rounded-xl border border-[#eadbcb] bg-[#fdfcfa] p-4"
+                >
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <input
+                      placeholder="Category name *"
+                      value={categoryForm.name}
+                      onChange={(e) => setCategoryForm((f) => ({ ...f, name: e.target.value }))}
+                      className="rounded-lg border border-[#ddc9b5] px-3 py-2 outline-none ring-[#8f0019]/30 focus:ring"
+                    />
+                    <input
+                      placeholder="Image URL (optional)"
+                      value={categoryForm.imageUrl}
+                      onChange={(e) => setCategoryForm((f) => ({ ...f, imageUrl: e.target.value }))}
+                      className="rounded-lg border border-[#ddc9b5] px-3 py-2 outline-none ring-[#8f0019]/30 focus:ring"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-[#6e4f43]">Subcategories</p>
+                    {categoryForm.subCategories.map((row, index) => (
+                      <div key={index} className="flex flex-wrap gap-2">
+                        <input
+                          placeholder="Subcategory name"
+                          value={row}
+                          onChange={(e) =>
+                            setCategoryForm((f) => ({
+                              ...f,
+                              subCategories: f.subCategories.map((s, i) => (i === index ? e.target.value : s)),
+                            }))
+                          }
+                          className="min-w-0 flex-1 rounded-lg border border-[#ddc9b5] px-3 py-2 outline-none ring-[#8f0019]/30 focus:ring"
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setCategoryForm((f) => ({
+                              ...f,
+                              subCategories:
+                                f.subCategories.length > 1
+                                  ? f.subCategories.filter((_, i) => i !== index)
+                                  : [''],
+                            }))
+                          }
+                          className="shrink-0 rounded-lg border border-[#ddc9b5] px-3 py-2 text-xs font-semibold text-[#5f1f17]"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setCategoryForm((f) => ({ ...f, subCategories: [...f.subCategories, ''] }))
+                      }
+                      className="rounded-lg border border-dashed border-[#c9a88f] px-3 py-2 text-sm font-semibold text-[#6f1c15] transition hover:bg-[#fff6ee]"
+                    >
+                      Add more
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="submit"
+                      className="rounded-lg bg-[#8f0019] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#6f0013]"
+                    >
+                      {editingCategoryId ? 'Update category' : 'Add category'}
+                    </button>
+                    {editingCategoryId ? (
+                      <button
+                        type="button"
+                        onClick={cancelCategoryEdit}
+                        className="rounded-lg border border-[#ddc9b5] px-4 py-2 text-sm font-semibold text-[#5f1f17]"
+                      >
+                        Cancel edit
+                      </button>
+                    ) : null}
+                  </div>
+                </form>
+                {categoryStatus ? (
+                  <p className="mt-3 text-sm text-[#7a5b4f]">{categoryStatus}</p>
+                ) : null}
+                {categoriesLoading ? (
+                  <p className="mt-6 text-sm text-[#7a5b4f]">Loading categories…</p>
+                ) : categories.length === 0 ? (
+                  <p className="mt-6 text-sm text-[#7a5b4f]">No categories yet. Add one above.</p>
+                ) : (
+                  <ul className="mt-6 space-y-2">
+                    {categoriesSorted.map((c) => (
+                      <li
+                        key={c._id}
+                        className="flex items-center gap-3 rounded-lg border border-[#eadbcb] bg-white px-3 py-2"
+                      >
+                        {c.imageUrl ? (
+                          <img
+                            src={c.imageUrl}
+                            alt=""
+                            className="h-12 w-12 shrink-0 rounded-md border border-[#eadbcb] object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md border border-dashed border-[#ddc9b5] bg-[#fdf7ef] text-[10px] text-[#7a5b4f]">
+                            No img
+                          </div>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold text-[#5f1f17]">{c.name}</p>
+                          <p className="truncate text-xs text-[#6e4f43]">{c.imageUrl || '—'}</p>
+                          {subsFromCategory(c).length ? (
+                            <div className="mt-1.5 flex flex-wrap gap-1">
+                              {subsFromCategory(c).map((s) => (
+                                <span
+                                  key={s}
+                                  className="rounded bg-[#f2e1d6] px-1.5 py-0.5 text-[10px] font-medium text-[#5f1f17]"
+                                >
+                                  {s}
+                                </span>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="mt-1 text-[10px] text-[#9a7a6c]">No subcategories yet</p>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => beginEditCategory(c)}
+                          className="shrink-0 rounded-md bg-[#e8f0ff] px-3 py-1.5 text-xs font-semibold text-[#1e3a5f]"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteCategory(c._id)}
+                          className="shrink-0 rounded-md bg-[#ffe0e0] px-3 py-1.5 text-xs font-semibold text-[#8f0019]"
+                        >
+                          Delete
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </section>
+          )}
+
           {activeSection === 'add' && (
             <form onSubmit={handleSubmit} className={ADMIN_PANEL_CARD}>
               <div className={ADMIN_PAGE_HEAD}>
@@ -655,6 +934,11 @@ function AdminPanelPage() {
               </div>
 
               <div className={`${ADMIN_PANEL_SCROLL} ${ADMIN_PAGE_BODY}`}>
+              {!categoriesLoading && categories.length === 0 ? (
+                <p className="mb-4 rounded-lg border border-dashed border-[#ddc9b5] bg-[#fdfcfa] px-4 py-3 text-sm text-[#7a5b4f]">
+                  Add at least one category under <strong>Categories</strong> before creating a product.
+                </p>
+              ) : null}
               <div className="grid gap-3 md:grid-cols-2">
                 <input
                   placeholder="Product Name *"
@@ -670,26 +954,33 @@ function AdminPanelPage() {
                   className="rounded-lg border border-[#ddc9b5] px-3 py-2 outline-none ring-[#8f0019]/30 focus:ring"
                 />
                 <select
-                  value={form.category}
-                  onChange={(event) => handleChange('category', event.target.value)}
+                  value={form.categoryId}
+                  onChange={(event) => handleChange('categoryId', event.target.value)}
                   className="rounded-lg border border-[#ddc9b5] px-3 py-2 outline-none ring-[#8f0019]/30 focus:ring"
+                  required
                 >
-                  {categoryOptions.map((item) => (
-                    <option key={item.category} value={item.category}>
-                      {item.category}
+                  {categoriesSorted.map((c) => (
+                    <option key={c._id} value={c._id}>
+                      {c.name}
                     </option>
                   ))}
                 </select>
                 <select
                   value={form.subCategory}
                   onChange={(event) => handleChange('subCategory', event.target.value)}
-                  className="rounded-lg border border-[#ddc9b5] px-3 py-2 outline-none ring-[#8f0019]/30 focus:ring"
+                  className="rounded-lg border border-[#ddc9b5] px-3 py-2 outline-none ring-[#8f0019]/30 focus:ring disabled:bg-[#f5f0ea] disabled:text-[#9a7a6c]"
+                  disabled={subCategoryOptions.length === 0}
+                  required={subCategoryOptions.length > 0}
                 >
-                  {subCategoryOptions.map((subCategory) => (
-                    <option key={subCategory} value={subCategory}>
-                      {subCategory}
-                    </option>
-                  ))}
+                  {subCategoryOptions.length === 0 ? (
+                    <option value="">No subcategories — add under Categories</option>
+                  ) : (
+                    subCategoryOptions.map((subCategory) => (
+                      <option key={subCategory} value={subCategory}>
+                        {subCategory}
+                      </option>
+                    ))
+                  )}
                 </select>
                 <input
                   placeholder="Fabric"
@@ -990,13 +1281,13 @@ function AdminPanelPage() {
                     Category
                   </span>
                   <select
-                    value={form.category}
-                    onChange={(event) => handleChange('category', event.target.value)}
+                    value={form.categoryId}
+                    onChange={(event) => handleChange('categoryId', event.target.value)}
                     className="w-full rounded-lg border border-[#ddc9b5] px-3 py-2 outline-none ring-[#8f0019]/30 focus:ring"
                   >
-                    {categoryOptions.map((item) => (
-                      <option key={item.category} value={item.category}>
-                        {item.category}
+                    {categoriesSorted.map((c) => (
+                      <option key={c._id} value={c._id}>
+                        {c.name}
                       </option>
                     ))}
                   </select>
@@ -1008,13 +1299,19 @@ function AdminPanelPage() {
                   <select
                     value={form.subCategory}
                     onChange={(event) => handleChange('subCategory', event.target.value)}
-                    className="w-full rounded-lg border border-[#ddc9b5] px-3 py-2 outline-none ring-[#8f0019]/30 focus:ring"
+                    className="w-full rounded-lg border border-[#ddc9b5] px-3 py-2 outline-none ring-[#8f0019]/30 focus:ring disabled:bg-[#f5f0ea] disabled:text-[#9a7a6c]"
+                    disabled={subCategoryOptions.length === 0}
+                    required={subCategoryOptions.length > 0}
                   >
-                    {subCategoryOptions.map((subCategory) => (
-                      <option key={subCategory} value={subCategory}>
-                        {subCategory}
-                      </option>
-                    ))}
+                    {subCategoryOptions.length === 0 ? (
+                      <option value="">No subcategories — add under Categories</option>
+                    ) : (
+                      subCategoryOptions.map((subCategory) => (
+                        <option key={subCategory} value={subCategory}>
+                          {subCategory}
+                        </option>
+                      ))
+                    )}
                   </select>
                 </label>
                 <label className="block">
@@ -1159,7 +1456,7 @@ function AdminPanelPage() {
             <div className="flex shrink-0 items-start justify-between gap-3 border-b border-[#eadbcb] px-4 py-3 md:px-6">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wider text-[#8f0019]">
-                  {detailProduct.category} — {detailProduct.subCategory}
+                  {productCategoryLabel(detailProduct.category)} — {detailProduct.subCategory}
                 </p>
                 <h3 className="mt-1 font-serif text-2xl text-[#6f1c15]">{detailProduct.productName}</h3>
                 {detailProduct.brand && (

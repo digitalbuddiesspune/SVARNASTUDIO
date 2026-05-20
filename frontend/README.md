@@ -1,5 +1,11 @@
 # React + Vite
 
+## Environment variables
+
+Copy `.env.example` to `.env` and set values. The app reads the backend URL from **`VITE_API_BASE_URL`** only (no fallback in code). The contact form needs **`VITE_WEB3FORMS_SUBMIT_URL`** and **`VITE_WEB3FORMS_ACCESS_KEY`**.
+
+After changing `.env`, restart the Vite dev server.
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:

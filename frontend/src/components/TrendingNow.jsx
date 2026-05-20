@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
+import { productCategoryLabel } from '../utils/productCategory'
+import { API_BASE_URL } from '../config/api'
 
 function TrendingNow() {
   const [products, setProducts] = useState([])
@@ -90,7 +90,7 @@ function TrendingNow() {
                 </div>
               </Link>
               <p className="mt-0 text-[11px] font-semibold uppercase tracking-[1.5px] text-[#8f0019]">
-                {product.category}
+                {productCategoryLabel(product.category)}
               </p>
               <Link to={`/products/${product._id}`}>
                 <h3 className="mt-1 line-clamp-2 font-serif text-base text-[#6f1c15] transition group-hover:text-[#8f0019] md:text-lg">

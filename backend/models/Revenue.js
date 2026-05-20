@@ -42,7 +42,7 @@ revenueSchema.statics.syncFromInvoice = async function (invoice) {
   if (!data?.invoice) return null;
   return this.findOneAndUpdate({ invoice: data.invoice }, data, {
     upsert: true,
-    new: true,
+    returnDocument: 'after',
     runValidators: true,
   });
 };

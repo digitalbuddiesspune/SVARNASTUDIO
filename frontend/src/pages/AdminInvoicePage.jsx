@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import InvoicePreview from '../components/InvoicePreview'
+import { API_BASE_URL } from '../config/api'
 
 const ADMIN_STORAGE_KEY = 'svarna_admin_auth'
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
 
 function AdminInvoicePage({ lookup = 'invoice' }) {
   const params = useParams()
