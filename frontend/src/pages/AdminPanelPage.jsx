@@ -17,6 +17,13 @@ function subsFromCategory(cat) {
   return cat.subCategories.map((s) => String(s).trim()).filter(Boolean)
 }
 
+function productCategoryId(product) {
+  const cat = product?.category
+  if (cat == null || cat === '') return ''
+  if (typeof cat === 'object' && cat._id != null) return String(cat._id)
+  return String(cat)
+}
+
 function emptyCategoryForm() {
   return { name: '', imageUrl: '', subCategories: [''] }
 }
@@ -246,6 +253,7 @@ function AdminPanelPage() {
   const [categoryForm, setCategoryForm] = useState(emptyCategoryForm)
   const [editingCategoryId, setEditingCategoryId] = useState(null)
   const [categoryStatus, setCategoryStatus] = useState('')
+  const [allProductsCategoryFilter, setAllProductsCategoryFilter] = useState('')
   const categoriesRef = useRef([])
   categoriesRef.current = categories
 
@@ -253,6 +261,13 @@ function AdminPanelPage() {
     () => sortCategoriesByDisplayOrder(categories),
     [categories]
   )
+
+  const allProductsFiltered = useMemo(() => {
+    if (!allProductsCategoryFilter) return products
+    return products.filter(
+      (p) => productCategoryId(p) === String(allProductsCategoryFilter),
+    )
+  }, [products, allProductsCategoryFilter])
 
   const selectedCategoryDoc = useMemo(() => {
     const id = form.categoryId
@@ -1087,13 +1102,44 @@ function AdminPanelPage() {
           {activeSection === 'all' && (
             <section className={`${ADMIN_PANEL_CARD} lg:overflow-hidden`}>
               <div className={ADMIN_PAGE_HEAD}>
-                <h2 className="font-serif text-2xl text-[#6f1c15]">All Products</h2>
-                <p className="mt-1 text-sm text-[#7a5b4f]">Click a row to view full product details.</p>
+                <div className="flex flex-wrap items-end justify-between gap-3">
+                  <div>
+                    <h2 className="font-serif text-2xl text-[#6f1c15]">All Products</h2>
+                    <p className="mt-1 text-sm text-[#7a5b4f]">Click a row to view full product details.</p>
+                  </div>
+                  {!loading && products.length > 0 ? (
+                    <div className="w-full min-w-[10rem] sm:w-52">
+                      <label
+                        htmlFor="all-products-category-filter"
+                        className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[#5f1f17]"
+                      >
+                        Category
+                      </label>
+                      <select
+                        id="all-products-category-filter"
+                        value={allProductsCategoryFilter}
+                        onChange={(e) => setAllProductsCategoryFilter(e.target.value)}
+                        className="w-full rounded-lg border border-[#ddc9b5] bg-white px-3 py-2 text-sm text-[#4d2018] shadow-sm outline-none transition focus:border-[#8f0019] focus:ring-2 focus:ring-[#8f0019]/20"
+                      >
+                        <option value="">All categories</option>
+                        {categoriesSorted.map((cat) => (
+                          <option key={cat._id} value={String(cat._id)}>
+                            {cat.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  ) : null}
+                </div>
               </div>
               {loading ? (
                 <p className={`${ADMIN_PAGE_BODY} shrink-0 text-sm text-[#7a5b4f]`}>Loading products...</p>
               ) : products.length === 0 ? (
                 <p className={`${ADMIN_PAGE_BODY} shrink-0 text-sm text-[#7a5b4f]`}>No products yet.</p>
+              ) : allProductsFiltered.length === 0 ? (
+                <p className={`${ADMIN_PAGE_BODY} shrink-0 text-sm text-[#7a5b4f]`}>
+                  No products in this category.
+                </p>
               ) : (
                 <div className={ADMIN_TABLE_INSET}>
                 <div className={ADMIN_TABLE_WRAP}>
@@ -1126,7 +1172,7 @@ function AdminPanelPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {products.map((product) => {
+                      {allProductsFiltered.map((product) => {
                         const thumb =
                           product.productImages?.[0] || 'https://via.placeholder.com/120x120?text=No+image'
                         const mrp = product.price?.mrp
