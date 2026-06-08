@@ -1,13 +1,12 @@
+import "dotenv/config";
 import cors from "cors";
-import dotenv from "dotenv";
 import express from "express";
 import connectDB from "./config/db.js";
 import productRoutes from "./routes/productRoutes.js";
 import categoryRoutes from "./routes/categoryRoutes.js";
 import invoiceRoutes from "./routes/invoiceRoutes.js";
 import revenueRoutes from "./routes/revenueRoutes.js";
-
-dotenv.config();
+import uploadRoutes from "./routes/uploadRoutes.js";
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -23,6 +22,7 @@ app.use("/api/products", productRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/invoices", invoiceRoutes);
 app.use("/api/revenue", revenueRoutes);
+app.use("/api/upload", uploadRoutes);
 
 app.use((err, _req, res, _next) => {
   console.error(err);

@@ -14,8 +14,8 @@ function AdminInvoiceEditPage() {
   }, [navigate])
 
   return (
-    <main className="flex min-h-dvh flex-col bg-[#faf7ec] px-3 py-2 md:min-h-screen md:px-6 md:py-6 lg:overflow-hidden">
-      <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col lg:h-full lg:min-h-0">
+    <main className="flex h-[100dvh] max-h-[100dvh] flex-col overflow-hidden bg-[#faf7ec] px-3 py-2 md:px-6 md:py-6 lg:h-screen lg:max-h-screen">
+      <div className="mx-auto flex min-h-0 w-full max-w-7xl flex-1 flex-col overflow-y-auto lg:overflow-hidden">
         <div className="mb-2 shrink-0 print:hidden md:mb-4">
           <Link
             to="/admin/panel"

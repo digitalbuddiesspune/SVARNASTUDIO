@@ -357,7 +357,7 @@ function InvoiceGenerator({ className = '', editId = null, embedded = false }) {
     'mb-1 block text-xs font-semibold uppercase tracking-wide text-[#5f1f17]'
 
   const shellClass = embedded
-    ? `flex h-full min-h-0 max-w-full min-w-0 flex-col overflow-hidden bg-white ${className}`
+    ? `flex min-h-0 max-w-full min-w-0 flex-col bg-white lg:h-full lg:overflow-hidden ${className}`
     : `flex h-full min-h-0 max-w-full min-w-0 flex-col overflow-x-hidden rounded-2xl border border-[#eadbcb] bg-white p-4 shadow-md md:p-6 ${className}`
 
   return (

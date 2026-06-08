@@ -138,12 +138,13 @@ function AllRevenueList({ className = '', embedded = false }) {
     )
   }
 
-  const tableInset = 'flex min-h-0 flex-1 flex-col overflow-hidden px-4 py-4 md:px-5 md:py-5'
+  const tableInset =
+    'hidden flex-col px-4 py-4 md:flex md:px-5 md:py-5 lg:min-h-0 lg:flex-1 lg:overflow-hidden'
   const tableBox =
     'flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-[#eadbcb]'
 
   const shellClass = embedded
-    ? `flex h-full min-h-0 flex-col overflow-hidden bg-white ${className}`
+    ? `flex min-h-0 flex-col bg-white lg:h-full lg:overflow-hidden ${className}`
     : `flex min-h-0 flex-col overflow-x-hidden rounded-2xl border border-[#eadbcb] bg-white p-4 shadow-sm md:h-full md:overflow-hidden md:p-6 ${className}`
 
   return (
@@ -278,7 +279,7 @@ function AllRevenueList({ className = '', embedded = false }) {
             ))}
           </ul>
 
-          <div className={embedded ? tableInset : 'mt-4 flex min-h-0 flex-1 flex-col'}>
+          <div className={embedded ? tableInset : 'mt-4 hidden min-h-0 flex-1 flex-col md:flex'}>
             <div
               className={`scrollbar-hide hidden min-h-0 flex-1 overflow-y-auto overscroll-contain md:block ${
                 embedded ? tableBox : ''

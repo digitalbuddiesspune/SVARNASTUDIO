@@ -1,6 +1,7 @@
 import InvoiceGenerator from '../components/InvoiceGenerator'
 import AllInvoicesList from '../components/AllInvoicesList'
 import AllRevenueList from '../components/AllRevenueList'
+import ProductImageUpload from '../components/ProductImageUpload'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { formatCurrency } from '../utils/invoiceFormat'
@@ -61,22 +62,22 @@ const ADMIN_SIDEBAR_CARD =
 const ADMIN_SIDEBAR =
   'print:hidden hidden h-full w-[260px] shrink-0 flex-col border-r border-[#eadbcb] bg-white p-4 md:flex md:p-5'
 
-/** Right column — fills remaining width, edge-to-edge. */
+/** Right column — scrollable on mobile; fixed inner panels on desktop. */
 const ADMIN_MAIN =
-  'flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-white'
+  'flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto bg-white lg:h-full lg:overflow-hidden'
 
 /** Page sections inside the right column — no outer horizontal padding (full bleed). */
 const ADMIN_PANEL_CARD =
-  'flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-white'
+  'flex min-h-0 flex-1 flex-col bg-white lg:h-full lg:overflow-hidden'
 
 const ADMIN_PAGE_HEAD =
   'shrink-0 bg-white px-5 py-4 md:px-6 md:py-5'
 
 const ADMIN_PAGE_BODY =
-  'scrollbar-hide min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4 md:px-6 md:py-5'
+  'px-5 py-4 md:px-6 md:py-5 lg:scrollbar-hide lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:overscroll-contain'
 
 const ADMIN_PANEL_SCROLL =
-  'scrollbar-hide min-h-0 flex-1 overflow-y-auto overscroll-contain pr-0.5'
+  'lg:scrollbar-hide lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:overscroll-contain pr-0.5'
 
 const DASHBOARD_STAT_CARD =
   'w-full rounded-xl bg-[#f9ece5] p-4 text-left'
@@ -85,10 +86,10 @@ const DASHBOARD_STAT_CARD_CLICKABLE = `${DASHBOARD_STAT_CARD} cursor-pointer tra
 
 /** Space around the table (inset from main panel edges). */
 const ADMIN_TABLE_INSET =
-  'flex min-h-0 flex-1 flex-col overflow-hidden px-4 py-4 md:px-5 md:py-5'
+  'flex flex-col px-4 py-4 md:px-5 md:py-5 lg:min-h-0 lg:flex-1 lg:overflow-hidden'
 
 const ADMIN_TABLE_WRAP =
-  'flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-[#eadbcb]'
+  'flex flex-col rounded-xl border border-[#eadbcb] lg:min-h-0 lg:flex-1 lg:overflow-hidden'
 
 function AdminSidebarHeader({ compact = false }) {
   return (
@@ -637,7 +638,7 @@ function AdminPanelPage() {
   const featuredProducts = products.filter((product) => product.isFeatured).length
 
   return (
-    <main className="flex min-h-screen w-full flex-col overflow-x-hidden bg-[#faf7ec] lg:h-screen lg:max-h-screen lg:flex-row lg:overflow-hidden">
+    <main className="flex h-[100dvh] max-h-[100dvh] w-full flex-col overflow-hidden bg-[#faf7ec] lg:h-screen lg:max-h-screen lg:flex-row">
       {/* Mobile top bar — heading + menu button */}
       <header className="print:hidden sticky top-0 z-40 flex shrink-0 items-center justify-between gap-3 border-b border-[#eadbcb] bg-[#faf7ec]/95 px-4 py-3 backdrop-blur-sm lg:hidden">
         <img
@@ -1078,11 +1079,10 @@ function AdminPanelPage() {
                 onChange={(event) => handleChange('styleTip', event.target.value)}
                 className="mt-3 min-h-20 w-full rounded-lg border border-[#ddc9b5] px-3 py-2 outline-none ring-[#8f0019]/30 focus:ring"
               />
-              <textarea
-                placeholder="Image URLs (comma or new line separated)"
-                value={form.imageUrls}
-                onChange={(event) => handleChange('imageUrls', event.target.value)}
-                className="mt-3 min-h-24 w-full rounded-lg border border-[#ddc9b5] px-3 py-2 outline-none ring-[#8f0019]/30 focus:ring"
+              <ProductImageUpload
+                idPrefix="add-product"
+                imageUrls={form.imageUrls}
+                onImageUrlsChange={(value) => handleChange('imageUrls', value)}
               />
 
               {status && <p className="mt-3 text-sm text-[#7a5b4f]">{status}</p>}
@@ -1100,7 +1100,7 @@ function AdminPanelPage() {
           )}
 
           {activeSection === 'all' && (
-            <section className={`${ADMIN_PANEL_CARD} lg:overflow-hidden`}>
+            <section className={ADMIN_PANEL_CARD}>
               <div className={ADMIN_PAGE_HEAD}>
                 <div className="flex flex-wrap items-end justify-between gap-3">
                   <div>
@@ -1143,7 +1143,7 @@ function AdminPanelPage() {
               ) : (
                 <div className={ADMIN_TABLE_INSET}>
                 <div className={ADMIN_TABLE_WRAP}>
-                  <div className="scrollbar-hide min-h-0 flex-1 overflow-x-auto overflow-y-auto overscroll-contain">
+                  <div className="scrollbar-hide overflow-x-auto lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:overscroll-contain">
                   <table className="w-full min-w-[800px] table-fixed border-collapse text-left text-sm">
                     <colgroup>
                       <col className="w-[88px]" />
@@ -1461,11 +1461,10 @@ function AdminPanelPage() {
                 onChange={(event) => handleChange('styleTip', event.target.value)}
                 className="mt-3 min-h-20 w-full rounded-lg border border-[#ddc9b5] px-3 py-2 outline-none ring-[#8f0019]/30 focus:ring"
               />
-              <textarea
-                placeholder="Image URLs (comma or new line separated)"
-                value={form.imageUrls}
-                onChange={(event) => handleChange('imageUrls', event.target.value)}
-                className="mt-3 min-h-24 w-full rounded-lg border border-[#ddc9b5] px-3 py-2 outline-none ring-[#8f0019]/30 focus:ring"
+              <ProductImageUpload
+                idPrefix="edit-product"
+                imageUrls={form.imageUrls}
+                onImageUrlsChange={(value) => handleChange('imageUrls', value)}
               />
 
               {status && <p className="mt-3 text-sm text-[#7a5b4f]">{status}</p>}

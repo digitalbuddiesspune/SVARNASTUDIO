@@ -4,19 +4,21 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon index.js",
-    "start": "node index.js",
-    "seed": "node seeder.js"
+    "dev": "nodemon --import dotenv/config index.js",
+    "start": "node --import dotenv/config index.js",
+    "seed": "node --import dotenv/config seeder.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "cloudinary": "^2.10.0",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
-    "mongoose": "^9.6.0"
+    "mongoose": "^9.6.0",
+    "multer": "^2.1.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"
