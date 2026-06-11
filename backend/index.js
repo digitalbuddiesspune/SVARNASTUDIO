@@ -1,6 +1,6 @@
 import "dotenv/config";
+import cors from "cors";
 import express from "express";
-import { createCorsMiddleware } from "./config/cors.js";
 import connectDB from "./config/db.js";
 import productRoutes from "./routes/productRoutes.js";
 import categoryRoutes from "./routes/categoryRoutes.js";
@@ -9,11 +9,9 @@ import revenueRoutes from "./routes/revenueRoutes.js";
 import uploadRoutes from "./routes/uploadRoutes.js";
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5500;
 
-const corsMiddleware = createCorsMiddleware();
-app.use(corsMiddleware);
-app.options(/.*/, corsMiddleware);
+app.use(cors());
 app.use(express.json());
 
 app.get("/", (_req, res) => {
