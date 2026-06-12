@@ -1,6 +1,15 @@
 import { useMemo, useState } from 'react'
 import { API_BASE_URL } from '../config/api'
 
+const MAX_IMAGE_SIZE_MB = 8
+const MAX_IMAGE_SIZE_BYTES = MAX_IMAGE_SIZE_MB * 1024 * 1024
+
+function formatFileSize(bytes) {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
 function parseImageUrls(raw) {
   return String(raw || '')
     .split(/[\n,]/)
@@ -22,6 +31,23 @@ function ProductImageUpload({ imageUrls, onImageUrlsChange, idPrefix = 'product'
     const files = Array.from(event.target.files || [])
     event.target.value = ''
     if (files.length === 0) return
+
+    const tooLarge = files.filter((file) => file.size > MAX_IMAGE_SIZE_BYTES)
+    if (tooLarge.length > 0) {
+      const fileList = tooLarge
+        .map((file) => `${file.name} (${formatFileSize(file.size)})`)
+        .join(', ')
+      setUploadError(
+        `Image too large. Maximum size is ${MAX_IMAGE_SIZE_MB} MB per file: ${fileList}`
+      )
+      return
+    }
+
+    const notImages = files.filter((file) => !file.type.startsWith('image/'))
+    if (notImages.length > 0) {
+      setUploadError('Only image files are allowed.')
+      return
+    }
 
     setUploading(true)
     setUploadError('')
@@ -76,9 +102,15 @@ function ProductImageUpload({ imageUrls, onImageUrlsChange, idPrefix = 'product'
           className="block w-full text-sm text-[#5f1f17] file:mr-3 file:rounded-lg file:border-0 file:bg-[#8f0019] file:px-3 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-[#730014] disabled:opacity-60"
         />
         <p className="mt-1 text-xs text-[#7a5b4f]">
-          {uploading ? 'Uploading to Cloudinary…' : 'Select one or more images (max 8 MB each).'}
+          {uploading
+            ? 'Uploading to Cloudinary…'
+            : `Select one or more images (maximum ${MAX_IMAGE_SIZE_MB} MB per image).`}
         </p>
-        {uploadError ? <p className="mt-1 text-xs text-red-700">{uploadError}</p> : null}
+        {uploadError ? (
+          <p className="mt-1 text-sm font-medium text-red-700" role="alert">
+            {uploadError}
+          </p>
+        ) : null}
       </div>
 
       {urls.length > 0 ? (
