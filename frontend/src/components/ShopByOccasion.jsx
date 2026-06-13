@@ -1,33 +1,35 @@
+import OptimizedCloudinaryImage from './OptimizedCloudinaryImage'
+
 const occasionItems = [
   {
     name: 'WEDDING',
     icon: 'wedding',
     image:
-      'https://res.cloudinary.com/dkq4kvwrr/image/upload/q_auto/f_auto/v1777548349/ChatGPT_Image_Apr_30_2026_04_54_41_PM_1_1_vc1g9b.png',
+      'https://res.cloudinary.com/dkq4kvwrr/image/upload/v1777548349/ChatGPT_Image_Apr_30_2026_04_54_41_PM_1_1_vc1g9b.png',
   },
   {
     name: 'FESTIVE',
     icon: 'festive',
     image:
-      'https://res.cloudinary.com/dkq4kvwrr/image/upload/q_auto/f_auto/v1777548609/ChatGPT_Image_Apr_30_2026_04_59_09_PM_1_1_cgi3a6.png',
+      'https://res.cloudinary.com/dkq4kvwrr/image/upload/v1777548609/ChatGPT_Image_Apr_30_2026_04_59_09_PM_1_1_cgi3a6.png',
   },
   {
     name: 'PARTY WEAR',
     icon: 'party',
     image:
-      'https://res.cloudinary.com/dkq4kvwrr/image/upload/q_auto/f_auto/v1777548864/ChatGPT_Image_Apr_30_2026_05_03_48_PM_1_nwqm7e.png',
+      'https://res.cloudinary.com/dkq4kvwrr/image/upload/v1777548864/ChatGPT_Image_Apr_30_2026_05_03_48_PM_1_nwqm7e.png',
   },
   {
     name: 'DAY OUT',
     icon: 'day',
     image:
-      'https://res.cloudinary.com/dkq4kvwrr/image/upload/q_auto/f_auto/v1777549023/ChatGPT_Image_Apr_30_2026_05_06_17_PM_1_dlw5xd.png',
+      'https://res.cloudinary.com/dkq4kvwrr/image/upload/v1777549023/ChatGPT_Image_Apr_30_2026_05_06_17_PM_1_dlw5xd.png',
   },
   {
     name: 'WORK WEAR',
     icon: 'work',
     image:
-      'https://res.cloudinary.com/dkq4kvwrr/image/upload/q_auto/f_auto/v1777549172/ChatGPT_Image_Apr_30_2026_05_09_00_PM_1_rb3oyb.png',
+      'https://res.cloudinary.com/dkq4kvwrr/image/upload/v1777549172/ChatGPT_Image_Apr_30_2026_05_09_00_PM_1_rb3oyb.png',
   },
 ]
 
@@ -146,11 +148,13 @@ function ShopByOccasion() {
                     'polygon(0% 100%, 0% 20%, 6% 15%, 13% 14%, 18% 8%, 25% 6%, 35% 7%, 44% 3%, 50% 0%, 56% 3%, 65% 7%, 75% 6%, 82% 8%, 87% 14%, 94% 15%, 100% 20%, 100% 100%)',
                 }}
               >
-                <img
+                <OptimizedCloudinaryImage
                   src={item.image}
                   alt={item.name}
+                  defaultWidth={580}
+                  widths={[320, 480, 580, 720]}
+                  sizes="(max-width: 640px) 45vw, 198px"
                   className="h-[230px] w-full object-cover sm:h-[290px]"
-                  loading="lazy"
                 />
               </div>
             </div>

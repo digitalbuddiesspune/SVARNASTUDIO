@@ -31,14 +31,12 @@ function emptyCategoryForm() {
   return { name: '', imageUrl: '', subCategories: [''] }
 }
 
-function emptyProductForm(categoriesList) {
-  const first = categoriesList[0]
-  const subs = subsFromCategory(first)
+function emptyProductForm() {
   return {
     productName: '',
-    brand: 'Svarna Studio',
-    categoryId: first ? String(first._id) : '',
-    subCategory: subs[0] || '',
+    brand: '',
+    categoryId: '',
+    subCategory: '',
     fabric: '',
     occasion: '',
     details: '',
@@ -47,14 +45,14 @@ function emptyProductForm(categoriesList) {
     imageUrls: '',
     mrp: '',
     discountedPrice: '',
-    stock: '0',
+    stock: '',
     isFeatured: false,
     isTrendingNow: false,
     isNewArrival: false,
   }
 }
 
-const defaultForm = emptyProductForm([])
+const defaultForm = emptyProductForm()
 
 /** Mobile drawer only — desktop sidebar is flush left (ADMIN_SIDEBAR). */
 const ADMIN_SIDEBAR_CARD =
@@ -383,22 +381,12 @@ function AdminPanelPage() {
   }
 
   useEffect(() => {
-    if (!categories.length || form.categoryId) return
-    const next = emptyProductForm(sortCategoriesByDisplayOrder(categories))
-    setForm((prev) => ({
-      ...prev,
-      categoryId: next.categoryId,
-      subCategory: next.subCategory,
-    }))
-  }, [categories, form.categoryId])
-
-  useEffect(() => {
     setForm((prev) => {
       if (subCategoryOptions.length === 0) {
         return prev.subCategory === '' ? prev : { ...prev, subCategory: '' }
       }
       if (subCategoryOptions.includes(prev.subCategory)) return prev
-      return { ...prev, subCategory: subCategoryOptions[0] || '' }
+      return { ...prev, subCategory: '' }
     })
   }, [form.categoryId, subCategoryOptions])
 
@@ -414,7 +402,7 @@ function AdminPanelPage() {
   }
 
   const resetForm = () => {
-    setForm(emptyProductForm(sortCategoriesByDisplayOrder(categoriesRef.current)))
+    setForm(emptyProductForm())
     setEditingId('')
     setIsEditModalOpen(false)
   }
@@ -985,6 +973,7 @@ function AdminPanelPage() {
                   className="rounded-lg border border-[#ddc9b5] px-3 py-2 outline-none ring-[#8f0019]/30 focus:ring"
                   required
                 >
+                  <option value="">Select category *</option>
                   {categoriesSorted.map((c) => (
                     <option key={c._id} value={c._id}>
                       {c.name}
@@ -1001,11 +990,14 @@ function AdminPanelPage() {
                   {subCategoryOptions.length === 0 ? (
                     <option value="">No subcategories — add under Categories</option>
                   ) : (
-                    subCategoryOptions.map((subCategory) => (
-                      <option key={subCategory} value={subCategory}>
-                        {subCategory}
-                      </option>
-                    ))
+                    <>
+                      <option value="">Select subcategory</option>
+                      {subCategoryOptions.map((subCategory) => (
+                        <option key={subCategory} value={subCategory}>
+                          {subCategory}
+                        </option>
+                      ))}
+                    </>
                   )}
                 </select>
                 <input
@@ -1037,8 +1029,8 @@ function AdminPanelPage() {
                   className="rounded-lg border border-[#ddc9b5] px-3 py-2 outline-none ring-[#8f0019]/30 focus:ring"
                 />
                 <input
-                  type="number"
-                  min="0"
+                  type="text"
+                  inputMode="numeric"
                   placeholder="Stock"
                   value={form.stock}
                   onChange={(event) => handleChange('stock', event.target.value)}
@@ -1393,8 +1385,9 @@ function AdminPanelPage() {
                     Stock
                   </span>
                   <input
-                    type="number"
-                    min="0"
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="Stock"
                     value={form.stock}
                     onChange={(event) => handleChange('stock', event.target.value)}
                     className="w-full rounded-lg border border-[#ddc9b5] px-3 py-2 outline-none ring-[#8f0019]/30 focus:ring"

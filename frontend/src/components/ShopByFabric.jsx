@@ -1,29 +1,30 @@
 import { Link } from 'react-router-dom'
+import OptimizedCloudinaryImage from './OptimizedCloudinaryImage'
 
 const fabricItems = [
   {
     name: 'LINEN',
     meta: 'Breathable and effortless for summer days',
     image:
-      'https://res.cloudinary.com/dkq4kvwrr/image/upload/q_auto/f_auto/v1777555046/ChatGPT_Image_Apr_30_2026_06_46_31_PM_1_herpbo.png',
+      'https://res.cloudinary.com/dkq4kvwrr/image/upload/v1777555046/ChatGPT_Image_Apr_30_2026_06_46_31_PM_1_herpbo.png',
   },
   {
     name: 'COTTON',
     meta: 'Lightweight comfort for daily wear',
     image:
-      'https://res.cloudinary.com/dkq4kvwrr/image/upload/q_auto/f_auto/v1777555190/ChatGPT_Image_Apr_30_2026_06_49_08_PM_1_qlzptj.png',
+      'https://res.cloudinary.com/dkq4kvwrr/image/upload/v1777555190/ChatGPT_Image_Apr_30_2026_06_49_08_PM_1_qlzptj.png',
   },
   {
     name: 'SILK BLEND',
     meta: 'Subtle sheen with rich drape',
     image:
-      'https://res.cloudinary.com/dkq4kvwrr/image/upload/q_auto/f_auto/v1777555494/ChatGPT_Image_Apr_30_2026_06_54_12_PM_1_x7lpmg.png',
+      'https://res.cloudinary.com/dkq4kvwrr/image/upload/v1777555494/ChatGPT_Image_Apr_30_2026_06_54_12_PM_1_x7lpmg.png',
   },
   {
     name: 'CHIFFON',
     meta: 'Flowy silhouettes with delicate movement',
     image:
-      'https://res.cloudinary.com/dkq4kvwrr/image/upload/q_auto/f_auto/v1777555680/ChatGPT_Image_Apr_30_2026_06_57_17_PM_1_piqxbv.png',
+      'https://res.cloudinary.com/dkq4kvwrr/image/upload/v1777555680/ChatGPT_Image_Apr_30_2026_06_57_17_PM_1_piqxbv.png',
   },
 ]
 
@@ -49,11 +50,13 @@ function ShopByFabric() {
             className="mx-auto w-full max-w-[168px] rounded-[16px] border border-[#a45858] bg-transparent p-2 text-center md:max-w-[220px]"
           >
             <div className="overflow-hidden rounded-[12px] border border-[#d8c4b1] bg-[#efe4d7] p-1">
-              <img
+              <OptimizedCloudinaryImage
                 src={item.image}
                 alt={item.name}
+                defaultWidth={500}
+                widths={[280, 400, 500, 640]}
+                sizes="(max-width: 768px) 45vw, 220px"
                 className="h-[165px] w-full rounded-[10px] object-cover md:h-[250px]"
-                loading="lazy"
               />
             </div>
             <div className="mx-auto mt-0 flex w-fit items-center gap-2 text-[#8f1328]">

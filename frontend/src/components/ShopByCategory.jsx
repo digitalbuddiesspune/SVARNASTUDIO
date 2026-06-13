@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import OptimizedCloudinaryImage from './OptimizedCloudinaryImage'
 
 const categories = [
   {
@@ -22,13 +23,13 @@ const categories = [
   {
     title: 'Tops',
     image:
-      'https://res.cloudinary.com/dkq4kvwrr/image/upload/q_auto/f_auto/v1777536616/c1ee00bb-5be0-4741-8d31-79e01792111d.png',
+      'https://res.cloudinary.com/dkq4kvwrr/image/upload/v1777536616/c1ee00bb-5be0-4741-8d31-79e01792111d.png',
     offsetClass: 'md:mt-10',
   },
   {
     title: 'Indo-Western',
     image:
-      'https://res.cloudinary.com/dkq4kvwrr/image/upload/q_auto/f_auto/v1777536730/c686982d-7968-4518-98ec-62877ed4cc08.png',
+      'https://res.cloudinary.com/dkq4kvwrr/image/upload/v1777536730/c686982d-7968-4518-98ec-62877ed4cc08.png',
     offsetClass: 'md:mt-0',
   },
 ]
@@ -60,11 +61,14 @@ function ShopByCategory() {
             >
               <div className="overflow-hidden rounded-[18px] border-2 border-[#6b2a26] bg-[#f8f4ea] p-2 transition-transform duration-200 group-hover:-translate-y-1">
                 <div className="overflow-hidden rounded-[14px] border border-white bg-white">
-                  <img
+                  <OptimizedCloudinaryImage
                     src={category.image}
                     alt={category.title}
+                    defaultWidth={640}
+                    widths={[320, 480, 640, 800]}
+                    width={640}
+                    height={768}
                     className="h-48 w-full object-cover md:h-72"
-                    loading="lazy"
                   />
                 </div>
               </div>
