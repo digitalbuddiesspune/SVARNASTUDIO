@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import ProductPriceDisplay from './ProductPriceDisplay'
 import { API_BASE_URL } from '../config/api'
 
 function NewArrivals() {
@@ -165,9 +166,12 @@ function NewArrivals() {
                     loading="lazy"
                   />
                   <p className="mt-2 line-clamp-1 text-sm text-[#f8dfcd]">{product.productName}</p>
-                  <p className="text-sm font-semibold text-white">
-                    Rs. {product.price?.discountedPrice ?? product.price?.mrp ?? '-'}
-                  </p>
+                  <ProductPriceDisplay
+                    price={product.price}
+                    size="sm"
+                    variant="light"
+                    className="mt-1"
+                  />
                 </Link>
               ))}
             </div>

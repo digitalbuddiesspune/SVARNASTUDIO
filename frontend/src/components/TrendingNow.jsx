@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import ProductPriceDisplay from './ProductPriceDisplay'
 import { productCategoryLabel } from '../utils/productCategory'
 import { API_BASE_URL } from '../config/api'
 
@@ -98,9 +99,7 @@ function TrendingNow() {
                 </h3>
               </Link>
               <div className="mt-4 flex items-end justify-between gap-2">
-                <p className="text-sm font-bold text-[#7f2018]">
-                  Rs. {product.price?.discountedPrice ?? product.price?.mrp ?? '-'}
-                </p>
+                <ProductPriceDisplay price={product.price} size="sm" />
                 <span className="rounded-full bg-[#8f0019]/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[1px] text-[#8f0019]">
                   Hot
                 </span>

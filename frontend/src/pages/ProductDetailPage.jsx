@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import Footer from '../components/Footer'
 import HowToOrder from '../components/HowToOrder'
+import ProductPriceDisplay from '../components/ProductPriceDisplay'
 import { productCategoryLabel } from '../utils/productCategory'
 import { API_BASE_URL } from '../config/api'
 
@@ -204,14 +205,9 @@ function ProductDetailPage() {
                 {product.details || product.description}
               </p>
 
-              <p className="mt-5 flex items-center gap-3">
-                <span className="text-4xl font-bold leading-none text-[#7f2018]">
-                  Rs. {product.price?.discountedPrice ?? product.price?.mrp ?? '-'}
-                </span>
-                <span className="pt-2 text-xl text-[#8f837a] line-through">
-                  Rs. {product.price?.mrp ?? '-'}
-                </span>
-              </p>
+              <div className="mt-5">
+                <ProductPriceDisplay price={product.price} size="lg" />
+              </div>
 
               <div className="mt-6 grid grid-cols-1 gap-2 text-[18px] text-[#6e4f43] md:grid-cols-2 md:text-base">
                 <p>

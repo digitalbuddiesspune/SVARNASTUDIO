@@ -134,10 +134,23 @@ const productSchema = new mongoose.Schema(
 );
 
 productSchema.pre("save", function () {
-  if (this.price && this.price.mrp) {
-    const discount = this.price.discountPercent || 0;
-    this.price.discountedPrice = this.price.mrp - (this.price.mrp * discount) / 100;
+  if (!this.price || !this.price.mrp) return;
+
+  const mrp = this.price.mrp;
+
+  if (
+    this.price.discountedPrice != null &&
+    Number.isFinite(Number(this.price.discountedPrice))
+  ) {
+    const discounted = Math.min(Math.max(0, Number(this.price.discountedPrice)), mrp);
+    this.price.discountedPrice = discounted;
+    this.price.discountPercent =
+      mrp > 0 ? Math.round(((mrp - discounted) / mrp) * 10000) / 100 : 0;
+    return;
   }
+
+  const discount = this.price.discountPercent || 0;
+  this.price.discountedPrice = mrp - (mrp * discount) / 100;
 });
 
 productSchema.index({ category: 1, subCategory: 1 });

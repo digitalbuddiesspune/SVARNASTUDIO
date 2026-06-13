@@ -2,11 +2,13 @@ import InvoiceGenerator from '../components/InvoiceGenerator'
 import AllInvoicesList from '../components/AllInvoicesList'
 import AllRevenueList from '../components/AllRevenueList'
 import ProductImageUpload from '../components/ProductImageUpload'
+import ProductPriceDisplay from '../components/ProductPriceDisplay'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { formatCurrency } from '../utils/invoiceFormat'
 import { productCategoryLabel } from '../utils/productCategory'
 import { sortCategoriesByDisplayOrder } from '../utils/categoryDisplayOrder'
+import { parseProductAmount } from '../utils/productPrice'
 import { API_BASE_URL } from '../config/api'
 
 const ADMIN_STORAGE_KEY = 'svarna_admin_auth'
@@ -44,7 +46,7 @@ function emptyProductForm(categoriesList) {
     styleTip: '',
     imageUrls: '',
     mrp: '',
-    discountPercent: '0',
+    discountedPrice: '',
     stock: '0',
     isFeatured: false,
     isTrendingNow: false,
@@ -437,6 +439,10 @@ function AdminPanelPage() {
       .map((value) => value.trim())
       .filter(Boolean)
 
+    const mrp = parseProductAmount(form.mrp) ?? 0
+    const parsedDiscount = parseProductAmount(form.discountedPrice)
+    const discountedPrice = parsedDiscount != null ? Math.min(parsedDiscount, mrp) : mrp
+
     const payload = {
       productName: form.productName.trim(),
       brand: form.brand.trim(),
@@ -454,8 +460,8 @@ function AdminPanelPage() {
       isNewArrival: Boolean(form.isNewArrival),
       design_details: {},
       price: {
-        mrp: Number(form.mrp || 0),
-        discountPercent: Number(form.discountPercent || 0),
+        mrp,
+        discountedPrice,
       },
     }
 
@@ -518,8 +524,12 @@ function AdminPanelPage() {
       description: product.description || '',
       styleTip: product.styleTip || '',
       imageUrls: (product.productImages || []).join('\n'),
-      mrp: String(product.price?.mrp ?? 0),
-      discountPercent: String(product.price?.discountPercent ?? 0),
+      mrp: String(product.price?.mrp ?? ''),
+      discountedPrice:
+        product.price?.discountedPrice != null &&
+        Number(product.price.discountedPrice) !== Number(product.price?.mrp)
+          ? String(product.price.discountedPrice)
+          : '',
       stock: String(product.stock ?? 0),
       isFeatured: Boolean(product.isFeatured),
       isTrendingNow: Boolean(product.isTrendingNow),
@@ -1011,20 +1021,19 @@ function AdminPanelPage() {
                   className="rounded-lg border border-[#ddc9b5] px-3 py-2 outline-none ring-[#8f0019]/30 focus:ring"
                 />
                 <input
-                  type="number"
-                  min="0"
+                  type="text"
+                  inputMode="decimal"
                   placeholder="MRP"
                   value={form.mrp}
                   onChange={(event) => handleChange('mrp', event.target.value)}
                   className="rounded-lg border border-[#ddc9b5] px-3 py-2 outline-none ring-[#8f0019]/30 focus:ring"
                 />
                 <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  placeholder="Discount %"
-                  value={form.discountPercent}
-                  onChange={(event) => handleChange('discountPercent', event.target.value)}
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="Discounted price"
+                  value={form.discountedPrice}
+                  onChange={(event) => handleChange('discountedPrice', event.target.value)}
                   className="rounded-lg border border-[#ddc9b5] px-3 py-2 outline-none ring-[#8f0019]/30 focus:ring"
                 />
                 <input
@@ -1175,12 +1184,6 @@ function AdminPanelPage() {
                       {allProductsFiltered.map((product) => {
                         const thumb =
                           product.productImages?.[0] || 'https://via.placeholder.com/120x120?text=No+image'
-                        const mrp = product.price?.mrp
-                        const discounted = product.price?.discountedPrice
-                        const hasDiscount =
-                          mrp != null &&
-                          discounted != null &&
-                          Number(mrp) !== Number(discounted)
                         return (
                           <tr
                             key={product._id}
@@ -1227,26 +1230,7 @@ function AdminPanelPage() {
                               )}
                             </td>
                             <td className="px-3 py-3 align-middle">
-                              <div className="space-y-1 text-[#5f1f17]">
-                                <p>
-                                  <span className="text-[10px] font-semibold uppercase tracking-wide text-[#8f0019]">
-                                    {hasDiscount ? 'Discounted' : 'Price'}
-                                  </span>
-                                  <br />
-                                  <span className="font-semibold">
-                                    Rs. {discounted ?? mrp ?? 0}
-                                  </span>
-                                </p>
-                                {hasDiscount && (
-                                  <p>
-                                    <span className="text-[10px] font-semibold uppercase tracking-wide text-[#6e4f43]">
-                                      MRP
-                                    </span>
-                                    <br />
-                                    <span className="text-sm text-[#6e4f43] line-through">Rs. {mrp}</span>
-                                  </p>
-                                )}
-                              </div>
+                              <ProductPriceDisplay price={product.price} size="sm" />
                             </td>
                             <td className="px-3 py-3 align-middle font-semibold text-[#5f1f17]">
                               {product.stock ?? 0}
@@ -1385,8 +1369,8 @@ function AdminPanelPage() {
                     MRP
                   </span>
                   <input
-                    type="number"
-                    min="0"
+                    type="text"
+                    inputMode="decimal"
                     value={form.mrp}
                     onChange={(event) => handleChange('mrp', event.target.value)}
                     className="w-full rounded-lg border border-[#ddc9b5] px-3 py-2 outline-none ring-[#8f0019]/30 focus:ring"
@@ -1394,14 +1378,13 @@ function AdminPanelPage() {
                 </label>
                 <label className="block">
                   <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[#5f1f17]">
-                    Discount Percent
+                    Discounted price
                   </span>
                   <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={form.discountPercent}
-                    onChange={(event) => handleChange('discountPercent', event.target.value)}
+                    type="text"
+                    inputMode="decimal"
+                    value={form.discountedPrice}
+                    onChange={(event) => handleChange('discountedPrice', event.target.value)}
                     className="w-full rounded-lg border border-[#ddc9b5] px-3 py-2 outline-none ring-[#8f0019]/30 focus:ring"
                   />
                 </label>
@@ -1532,22 +1515,8 @@ function AdminPanelPage() {
               )}
 
               <dl className="mt-4 grid gap-3 sm:grid-cols-2">
-                <div className="rounded-lg border border-[#eadbcb] bg-white p-3">
-                  <dt className="text-xs font-semibold uppercase tracking-wide text-[#8f0019]">Selling price</dt>
-                  <dd className="mt-1 text-lg font-semibold text-[#5f1f17]">
-                    Rs. {detailProduct.price?.discountedPrice ?? detailProduct.price?.mrp ?? 0}
-                  </dd>
-                </div>
-                <div className="rounded-lg border border-[#eadbcb] bg-white p-3">
-                  <dt className="text-xs font-semibold uppercase tracking-wide text-[#8f0019]">MRP & discount</dt>
-                  <dd className="mt-1 text-sm text-[#5f1f17]">
-                    MRP: Rs. {detailProduct.price?.mrp ?? '—'}
-                    {detailProduct.price?.discountPercent != null && (
-                      <span className="ml-2 text-[#6e4f43]">
-                        ({detailProduct.price.discountPercent}% off)
-                      </span>
-                    )}
-                  </dd>
+                <div className="rounded-lg border border-[#eadbcb] bg-white p-3 sm:col-span-2">
+                  <ProductPriceDisplay price={detailProduct.price} size="md" />
                 </div>
                 <div className="rounded-lg border border-[#eadbcb] bg-white p-3">
                   <dt className="text-xs font-semibold uppercase tracking-wide text-[#8f0019]">Stock</dt>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import Footer from '../components/Footer'
+import ProductPriceDisplay from '../components/ProductPriceDisplay'
 import { productCategoryLabel } from '../utils/productCategory'
 import { filterProductsByQuery } from '../utils/productFilters'
 import { API_BASE_URL } from '../config/api'
@@ -121,14 +122,9 @@ function ProductsPage() {
                   <p className="mt-1 text-xs text-[#7a5b4f]">
                     Fabric: {product.fabric || '-'}
                   </p>
-                  <p className="mt-2 flex items-center gap-2">
-                    <span className="text-base font-bold text-[#1f8a3b]">
-                      Rs. {product.price?.discountedPrice ?? product.price?.mrp ?? '-'}
-                    </span>
-                    <span className="text-xs text-[#c62828] line-through">
-                      Rs. {product.price?.mrp ?? '-'}
-                    </span>
-                  </p>
+                  <div className="mt-2">
+                    <ProductPriceDisplay price={product.price} size="sm" />
+                  </div>
                 </div>
               </article>
             ))}

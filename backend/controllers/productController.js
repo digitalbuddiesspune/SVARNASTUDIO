@@ -5,6 +5,41 @@ import Category from "../models/category.js";
 const escapeRegex = (value = "") =>
   value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
+function parseAmount(value) {
+  if (value === null || value === undefined || value === "") return null;
+  const n = Number(String(value).trim().replace(/,/g, ""));
+  return Number.isFinite(n) ? n : null;
+}
+
+function normalizeProductPrice(price) {
+  if (!price || typeof price !== "object") return price;
+
+  const mrp = parseAmount(price.mrp) ?? 0;
+  const normalized = {
+    ...price,
+    mrp,
+  };
+
+  let discounted = parseAmount(price.discountedPrice);
+
+  if (discounted == null && price.discountPercent != null) {
+    const discountPercent = parseAmount(price.discountPercent) ?? 0;
+    discounted = mrp - (mrp * discountPercent) / 100;
+  }
+
+  if (discounted == null) {
+    discounted = mrp;
+  }
+
+  normalized.discountedPrice = Math.min(Math.max(0, discounted), mrp);
+  normalized.discountPercent =
+    mrp > 0
+      ? Math.round(((mrp - normalized.discountedPrice) / mrp) * 10000) / 100
+      : 0;
+
+  return normalized;
+}
+
 export const getProducts = async (req, res) => {
   if (mongoose.connection.readyState !== 1) {
     return res
@@ -112,7 +147,12 @@ export const createProduct = async (req, res) => {
       .json({ message: "Database not connected. Cannot create product." });
   }
 
-  const createdProduct = await Product.create(req.body);
+  const payload = { ...req.body };
+  if (payload.price && typeof payload.price === "object") {
+    payload.price = normalizeProductPrice(payload.price);
+  }
+
+  const createdProduct = await Product.create(payload);
   return res.status(201).json(createdProduct);
 };
 
@@ -127,13 +167,7 @@ export const updateProduct = async (req, res) => {
   const payload = { ...req.body };
 
   if (payload.price && typeof payload.price === "object") {
-    const mrp = Number(payload.price.mrp ?? 0);
-    const discountPercent = Number(payload.price.discountPercent ?? 0);
-
-    payload.price.mrp = Number.isFinite(mrp) ? mrp : 0;
-    payload.price.discountPercent = Number.isFinite(discountPercent) ? discountPercent : 0;
-    payload.price.discountedPrice =
-      payload.price.mrp - (payload.price.mrp * payload.price.discountPercent) / 100;
+    payload.price = normalizeProductPrice(payload.price);
   }
 
   const updatedProduct = await Product.findByIdAndUpdate(id, payload, {
